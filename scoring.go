@@ -16,8 +16,9 @@ import (
 )
 
 type Athlete struct {
+	id         int
 	name       string
-	birth_year int
+	age        int
 	sex        string
 	foreign    bool
 }
@@ -28,6 +29,28 @@ type Race struct {
 	date     time.Time
 	athletes []Athlete
 }
+
+type AN struct {
+	name string
+	birthYear int
+}
+
+var adb = make(map[AN]int)
+
+func getId( name string, year int) int {
+	for i := -1 ; i < 2 ; i++ {
+        key := AN{ name , year + i }
+        ath_id,ok := adb[key]
+        if ok {
+        	return ath_id
+		}
+	}
+	key := AN{ name , year }
+	int_id := len(adb)
+	adb[key] = int_id
+	return int_id
+}
+
 
 func athleteFromLine(line []string) Athlete {
 	var athlete Athlete
@@ -47,7 +70,8 @@ func athleteFromLine(line []string) Athlete {
 	if len(sex) > 0 {
 		sex = strings.ToUpper(sex)[:1]
 		if ( sex == "F" || sex != "F") {
-			athlete = Athlete{name, 2020 - age, sex, foreign}
+			id := getId(name, age)
+			athlete = Athlete{id, name, age, sex, foreign}
 		}
 	}
 	return athlete
@@ -126,7 +150,7 @@ func scanFiles() {
 		raceCount++
 		aCount += len(race.athletes)
 	}
-	println("%d races and %d athletes", raceCount, aCount)
+	println("%d races and %d athletes", raceCount, len(adb))
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
