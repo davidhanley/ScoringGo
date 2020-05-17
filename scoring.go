@@ -50,12 +50,16 @@ func new_athlete() int {
 	return athlete_count
 }
 
+//taking a name an an age, return an athlete ID
 func GetId(name string, age int) int {
+	name = strings.ToUpper(name)
+	name = strings.TrimSpace(name)
+
 	athlete_list, ok := athlete_db[name]
 
 	if ok == false {
 		id := new_athlete()
-		athlete_db[name] = []AN{AN{id, name, age}}
+		athlete_db[name] = []AN{{id, name, age}}
 		return id
 	} else {
 		if age == 0 {
@@ -77,6 +81,8 @@ func GetId(name string, age int) int {
 	}
 }
 
+//turn a CSV line into an athlete
+//intended to return null if there is no gender
 func athleteFromLine(line []string) Athlete {
 	var athlete Athlete
 	name := line[1]
@@ -94,7 +100,7 @@ func athleteFromLine(line []string) Athlete {
 
 	if len(sex) > 0 {
 		sex = strings.ToUpper(sex)[:1]
-		if sex == "F" || sex != "F" {
+		if sex == "F" || sex == "M" {
 			id := GetId(name, age)
 			athlete = Athlete{id, name, age, sex, foreign}
 		}
@@ -109,6 +115,9 @@ func process(fn string) Race {
 	if err != nil {
 		log.Fatalln("Couldn't open the csv file", err)
 	}
+
+	defer csvfile.Close()
+	
 	r := csv.NewReader(csvfile)
 
 	popper := func() string {
@@ -144,7 +153,7 @@ func process(fn string) Race {
 		}
 	}
 
-	csvfile.Close()
+
 
 	return Race{raceName, racePoints, raceDate, athletes}
 }

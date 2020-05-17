@@ -19,6 +19,10 @@ func TestGetId(t *testing.T) {
 		t.Error("should still be same dave")
 	}
 
+	if GetId("David Hanley", 46) != 1 {
+		t.Error("should still be same dave")
+	}
+
 	if GetId("david hanley", 0) != 1 {
 		t.Error("should still be same dave")
 	}
@@ -36,10 +40,10 @@ func TestGetId(t *testing.T) {
 	}
 
 	if GetId("erin brand", 50) != 3 {
-		t.Error("in her prime erin should be 3")
+		t.Error("in-her-prime erin should be 3")
 	}
 
-	if athlete_db["erin brand"][0].age != 50 {
+	if athlete_db["ERIN BRAND"][0].age != 50 {
 		t.Error("erin should be updated")
 	}
 
