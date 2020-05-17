@@ -3,23 +3,24 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
-	//"net/http"
-	//"strings"
+	"strings"
 	"io"
-	"encoding/csv"
-	"os"
-	"time"
-	"strconv"
-	"path/filepath"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
 )
 
 type Athlete struct {
+	id         int
 	name       string
-	birth_year int
+	age        int
 	sex        string
+	foreign    bool
 }
 
 type Race struct {
@@ -29,14 +30,51 @@ type Race struct {
 	athletes []Athlete
 }
 
+type AN struct {
+	name string
+	birthYear int
+}
+
+var adb = make(map[AN]int)
+
+func getId( name string, year int) int {
+	for i := -1 ; i < 2 ; i++ {
+        key := AN{ name , year + i }
+        ath_id,ok := adb[key]
+        if ok {
+        	return ath_id
+		}
+	}
+	key := AN{ name , year }
+	int_id := len(adb)
+	adb[key] = int_id
+	return int_id
+}
+
+
 func athleteFromLine(line []string) Athlete {
+	var athlete Athlete
 	name := line[1]
 	age, err := strconv.Atoi(line[2])
 	if err != nil {
 		age = -1
 	}
-	sex = line[2]
-	return Athlete{name, 2020 - age}
+	sex := line[2]
+	foreign := false
+	if len(sex) > 0 && sex[0] == '*' {
+		print("FORREIGN!!")
+		foreign = true
+		sex = sex[1:]
+	}
+
+	if len(sex) > 0 {
+		sex = strings.ToUpper(sex)[:1]
+		if ( sex == "F" || sex != "F") {
+			id := getId(name, age)
+			athlete = Athlete{id, name, age, sex, foreign}
+		}
+	}
+	return athlete
 }
 
 func process(fn string) Race {
@@ -67,7 +105,6 @@ func process(fn string) Race {
 		r.FieldsPerRecord = 0
 		record, err := r.Read()
 		if err == io.EOF {
-			println("eof")
 			break
 		}
 		if err != nil {
@@ -77,7 +114,9 @@ func process(fn string) Race {
 
 		athlete := athleteFromLine(record)
 
-		athletes = append(athletes, athlete)
+		if ( athlete != (Athlete{}) ) {
+			athletes = append(athletes, athlete)
+		}
 	}
 
 	csvfile.Close()
@@ -101,14 +140,17 @@ func scanFiles() {
 	}
 
 	raceCount := 0
-
+	aCount := 0
 	for _, file := range files {
 		race := process(file)
-		fmt.Printf("race: %v\n", race.name)
-		fmt.Printf("date: %v\n", race.date)
-		fmt.Printf("points: %v\n", race.points)
-		fmt.Printf("athlete count: %v\n", len(race.athletes))
+		//fmt.Printf("race: %v\n", race.name)
+		//fmt.Printf("date: %v\n", race.date)
+		//fmt.Printf("points: %v\n", race.points)
+		//fmt.Printf("athlete count: %v\n", len(race.athletes))
+		raceCount++
+		aCount += len(race.athletes)
 	}
+	println("%d races and %d athletes", raceCount, len(adb))
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -120,4 +162,3 @@ func main() {
 	//http.HandleFunc("/", handler)
 	//log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
