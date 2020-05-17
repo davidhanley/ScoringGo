@@ -14,11 +14,11 @@ import (
 )
 
 type Athlete struct {
-	id         int
-	name       string
-	age        int
-	sex        string
-	foreign    bool
+	id      int
+	name    string
+	age     int
+	sex     string
+	foreign bool
 }
 
 type Race struct {
@@ -29,24 +29,52 @@ type Race struct {
 }
 
 type AN struct {
+	id   int
 	name string
-	birthYear int
+	age  int
 }
 
-var adb = make(map[AN]int)
+var athlete_db = make(map[string][]AN)
+var athlete_count = 0
 
-func GetId( name string, year int) int {
-	for i := -1 ; i < 2 ; i++ {
-        key := AN{ name , year + i }
-        ath_id,ok := adb[key]
-        if ok {
-        	return ath_id
-		}
+// Abs returns the absolute value of x.
+func abs(x int) int {
+	if x < 0 {
+		return -x
 	}
-	key := AN{ name , year }
-	int_id := len(adb)
-	adb[key] = int_id
-	return int_id
+	return x
+}
+
+func new_athlete() int {
+	athlete_count = athlete_count + 1
+	return athlete_count
+}
+
+func GetId(name string, age int) int {
+	athlete_list, ok := athlete_db[name]
+
+	if ok == false {
+		id := new_athlete()
+		athlete_db[name] = []AN{AN{id, name, age}}
+		return id
+	} else {
+		if age == 0 {
+			return athlete_list[0].id
+		}
+		for aid := range athlete_list {
+			athlete := &athlete_list[aid]
+			if athlete.age == 0 {
+				athlete.age = age
+			}
+			if abs(athlete.age-age) < 2 {
+				return athlete.id
+			}
+		}
+		id := new_athlete()
+		athlete_list = append(athlete_list, AN{id, name, age})
+		athlete_db[name] = athlete_list
+		return id
+	}
 }
 
 func athleteFromLine(line []string) Athlete {
@@ -66,7 +94,7 @@ func athleteFromLine(line []string) Athlete {
 
 	if len(sex) > 0 {
 		sex = strings.ToUpper(sex)[:1]
-		if ( sex == "F" || sex != "F") {
+		if sex == "F" || sex != "F" {
 			id := GetId(name, age)
 			athlete = Athlete{id, name, age, sex, foreign}
 		}
@@ -111,7 +139,7 @@ func process(fn string) Race {
 
 		athlete := athleteFromLine(record)
 
-		if ( athlete != (Athlete{}) ) {
+		if athlete != (Athlete{}) {
 			athletes = append(athletes, athlete)
 		}
 	}
@@ -147,7 +175,7 @@ func scanFiles() {
 		raceCount++
 		aCount += len(race.athletes)
 	}
-	println("%d races and %d athletes", raceCount, len(adb))
+	println("%d races and %d athletes", raceCount, athlete_count)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
