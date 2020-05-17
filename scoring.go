@@ -1,6 +1,6 @@
 // +build ignore
 
-package main
+package scoring
 
 import (
 	"encoding/csv"
@@ -37,7 +37,7 @@ type AN struct {
 
 var adb = make(map[AN]int)
 
-func getId( name string, year int) int {
+func GetId( name string, year int) int {
 	for i := -1 ; i < 2 ; i++ {
         key := AN{ name , year + i }
         ath_id,ok := adb[key]
@@ -50,7 +50,6 @@ func getId( name string, year int) int {
 	adb[key] = int_id
 	return int_id
 }
-
 
 func athleteFromLine(line []string) Athlete {
 	var athlete Athlete
@@ -70,7 +69,7 @@ func athleteFromLine(line []string) Athlete {
 	if len(sex) > 0 {
 		sex = strings.ToUpper(sex)[:1]
 		if ( sex == "F" || sex != "F") {
-			id := getId(name, age)
+			id := GetId(name, age)
 			athlete = Athlete{id, name, age, sex, foreign}
 		}
 	}
