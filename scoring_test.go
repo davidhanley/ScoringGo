@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestGetId(t *testing.T) {
 	if LookupAthlete("david hanley", 47,"M",false).id != 1 {
@@ -58,4 +61,20 @@ func TestGetId(t *testing.T) {
 	if ( first.foreign == false ) {
 		t.Error("the winner was foreign...")
 	}
+
+	if ( first.raceResults[0].points != 350.0 ) {
+		t.Error("the winner points are wrong...")
+	}
+
+	dave := race.athletes[28]
+
+	daveResult := dave.raceResults[0]
+
+	fmt.Printf("davept: %f" , daveResult.points)
+	if ( daveResult.points != 67.31 ) {
+		t.Error("dave points are wrong...")
+	}
+
+
+
 }

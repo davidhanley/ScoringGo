@@ -184,7 +184,10 @@ func process(fn string) *Race {
 		}
 	}
 
-	return &Race{raceName, racePoints, raceDate, athletes}
+	race := &Race{raceName, racePoints, raceDate, athletes}
+	scoreGender(race, "F")
+	scoreGender(race, "M")
+	return race
 }
 
 func scoreGender(race *Race, gender string) {
@@ -226,8 +229,6 @@ func scanFiles() {
 			fmt.Printf("points: %d\n", race.points)
 			fmt.Printf("athlete count: %v\n", len(race.athletes))
 			races = append(races, race)
-			scoreGender(race, "F")
-			scoreGender(race, "M")
 			aCount += len(race.athletes)
 		}
 	}
