@@ -43,5 +43,19 @@ func TestGetId(t *testing.T) {
 		t.Error("erin should be updated")
 	}
 
+    race := process("data/2020-scale-the-strat.csv")
 
+    if ( race.name != "2020 Scale The Strat") {
+		t.Error("scale the strat name is wrong")
+	}
+
+	if ( race.points != 350) {
+		t.Error("strat points are wrong")
+	}
+
+	first := race.athletes[0]
+
+	if ( first.foreign == false ) {
+		t.Error("the winner was foreign...")
+	}
 }
