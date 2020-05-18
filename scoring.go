@@ -16,7 +16,7 @@ import (
 )
 
 type RaceResult struct {
-	race   Race
+	race   *Race
 	points float32
 }
 
@@ -184,6 +184,21 @@ func process(fn string) *Race {
 	return &Race{raceName, racePoints, raceDate, athletes}
 }
 
+func scoreGender(race *Race, gender string ) {
+
+  basePoints := float64(race.points)
+  denom := 5.0
+  athletes := race.athletes
+  for i := 0 ; i < len(athletes) ; i++ {
+  	athlete := athletes[i]
+  	if ( athlete.sex == gender) {
+  		points := ( basePoints * 5 ) / denom
+  		athlete.raceResults = append(athlete.raceResults,RaceResult{race,float32(points)})
+  		denom = denom + 1.0
+	}
+  }
+}
+
 func scanFiles() {
 	var files []string
 
@@ -199,7 +214,6 @@ func scanFiles() {
 		panic(err)
 	}
 
-	raceCount := 0
 	aCount := 0
 	for _, file := range files {
 		race := process(file)
@@ -209,10 +223,17 @@ func scanFiles() {
 			fmt.Printf("points: %d\n", race.points)
 			fmt.Printf("athlete count: %v\n", len(race.athletes))
 			races = append(races, race)
+			scoreGender(race,"F")
+			scoreGender(race,"M")
 			aCount += len(race.athletes)
 		}
 	}
-	println("%d races and %d athletes", raceCount, athleteCount)
+	fmt.Printf("%d races and %d athletes", len(races), athleteCount)
+
+	/*jd := athleteDb["JOSH DUNCAN"][0]
+	print(jd.name)
+	results := jd.raceResults
+    */
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
