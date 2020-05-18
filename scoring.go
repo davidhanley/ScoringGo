@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
 	"log"
+	//"regexp"
 	"strings"
 	"io"
 	"net/http"
@@ -13,17 +15,23 @@ import (
 	"time"
 )
 
+type RaceResult struct {
+	race   Race
+	points float32
+}
+
 type Athlete struct {
-	id      int
-	name    string
-	age     int
-	sex     string
-	foreign bool
+	id          int
+	name        string
+	age         int
+	sex         string
+	foreign     bool
+	raceResults []RaceResult
 }
 
 type Race struct {
 	name     string
-	points   string
+	points   int
 	date     time.Time
 	athletes []Athlete
 }
@@ -55,7 +63,7 @@ func GetId(name string, age int) int {
 	name = strings.ToUpper(name)
 	name = strings.TrimSpace(name)
 
-	athlete_list, ok := athlete_db[name]
+	athleteList, ok := athlete_db[name]
 
 	if ok == false {
 		id := new_athlete()
@@ -63,10 +71,10 @@ func GetId(name string, age int) int {
 		return id
 	} else {
 		if age == 0 {
-			return athlete_list[0].id
+			return athleteList[0].id
 		}
-		for aid := range athlete_list {
-			athlete := &athlete_list[aid]
+		for aid := range athleteList {
+			athlete := &athleteList[aid]
 			if athlete.age == 0 {
 				athlete.age = age
 			}
@@ -75,15 +83,15 @@ func GetId(name string, age int) int {
 			}
 		}
 		id := new_athlete()
-		athlete_list = append(athlete_list, AN{id, name, age})
-		athlete_db[name] = athlete_list
+		athleteList = append(athleteList, AN{id, name, age})
+		athlete_db[name] = athleteList
 		return id
 	}
 }
 
 //turn a CSV line into an athlete
 //intended to return null if there is no gender
-func athleteFromLine(line []string) Athlete {
+func athleteFromLine(line []string) *Athlete {
 	var athlete Athlete
 	name := line[1]
 	age, err := strconv.Atoi(line[2])
@@ -102,29 +110,26 @@ func athleteFromLine(line []string) Athlete {
 		sex = strings.ToUpper(sex)[:1]
 		if sex == "F" || sex == "M" {
 			id := GetId(name, age)
-			athlete = Athlete{id, name, age, sex, foreign}
+			athlete = Athlete{id, name, age, sex, foreign, make([]RaceResult, 1)}
 		} /*else {
 			println("improper sex:", sex)
 		}*/
 	}
-	return athlete
+	return &athlete
 }
 
-func process(fn string) Race {
+func process(fn string) *Race {
 
 	csvfile, err := os.Open(fn)
-
 	if err != nil {
 		log.Fatalln("Couldn't open the csv file", err)
 	}
-
 	defer csvfile.Close()
 
-	r := csv.NewReader(csvfile)
-
+	reader := bufio.NewReader(csvfile)
 	popper := func() string {
-		line, _ := r.Read()
-		return strings.TrimSpace(line[0])
+		line, _ := reader.ReadString('\n')
+		return strings.TrimSpace(line)
 	}
 
 	raceName := popper()
@@ -135,7 +140,7 @@ func process(fn string) Race {
 	//loc, _ := time.LoadLocation("UTC")
 
 	//println("--------------")
-	println("race:", fn)
+	//println("race:", fn)
 	//y,m,d := raceDate.Date()
 
 	//fmt.Printf("%s -- %d %d %d",raceDateStr, y,m,d)
@@ -146,17 +151,32 @@ func process(fn string) Race {
 
 	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
 		//println("Skipping")
-		return Race{}
+		return nil
 	}
 
-	println("Loading ",fn)
+	println("Loading ", fn)
+
 
 	popper()
+	
+	racePointsString := popper()
+	racePointsString = strings.Split(racePointsString, ",")[0]
+	racePointsString = strings.Split(racePointsString, "#")[0]
 
-	racePoints := popper()
+	var racePoints int
+	fmt.Sscanf(racePointsString, "%d", &racePoints)
+	if racePoints == 0 {
+		panic(fmt.Sprintf("unable to parse points string %s for race %s", racePointsString, fn))
+	}
 
 	athletes := make([]Athlete, 0, 500)
 
+	csvfile.Seek(0, io.SeekStart)
+	r := csv.NewReader(csvfile)
+	r.Read()
+	r.Read()
+	r.Read()
+	r.Read()
 	for {
 		r.FieldsPerRecord = 0
 		record, err := r.Read()
@@ -171,8 +191,8 @@ func process(fn string) Race {
 
 		athlete := athleteFromLine(record)
 
-		if athlete != (Athlete{}) {
-			athletes = append(athletes, athlete)
+		if athlete != nil {
+			athletes = append(athletes, *athlete)
 			//print(".")
 		} /*else {
 			println("unable to parse line :")
@@ -183,7 +203,7 @@ func process(fn string) Race {
 		} */
 	}
 
-	return Race{raceName, racePoints, raceDate, athletes}
+	return &Race{raceName, racePoints, raceDate, athletes}
 }
 
 func scanFiles() {
@@ -205,12 +225,14 @@ func scanFiles() {
 	aCount := 0
 	for _, file := range files {
 		race := process(file)
-		//fmt.Printf("race: %v\n", race.name)
-		//fmt.Printf("date: %v\n", race.date)
-		//fmt.Printf("points: %v\n", race.points)
-		//fmt.Printf("athlete count: %v\n", len(race.athletes))
-		raceCount++
-		aCount += len(race.athletes)
+		if race != nil {
+			fmt.Printf("race: %v\n", race.name)
+			fmt.Printf("date: %v\n", race.date)
+			fmt.Printf("points: %d\n", race.points)
+			fmt.Printf("athlete count: %v\n", len(race.athletes))
+			raceCount++
+			aCount += len(race.athletes)
+		}
 	}
 	println("%d races and %d athletes", raceCount, athlete_count)
 }
