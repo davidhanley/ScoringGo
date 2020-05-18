@@ -135,9 +135,14 @@ func process(fn string) *Race {
 	raceName := popper()
 	layoutISO := "2006-1-2"
 	raceDateStr := popper()
+	raceDateStr = strings.Split(raceDateStr, ",")[0]
 	raceDate, _ := time.Parse(layoutISO, raceDateStr)
 
 	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
+		y,m,d := raceDate.Date()
+		println(raceDateStr,y,m,d)
+		println("skipping ",fn,raceName)
+
 		return nil
 	}
 
@@ -159,7 +164,6 @@ func process(fn string) *Race {
 
 	csvfile.Seek(0, io.SeekStart)
 	r := csv.NewReader(csvfile)
-	r.Read()
 	r.Read()
 	r.Read()
 	r.Read()
@@ -186,16 +190,16 @@ func process(fn string) *Race {
 }
 
 func scoreGender(race *Race, gender string) {
-	basePoints := float64(race.points)
-	denom := 5.0
+	basePoints := float64(race.points * 5)
+	denom := 5
 	athletes := race.athletes
 	for i := 0; i < len(athletes); i++ {
 		athlete := athletes[i]
 		if athlete.sex == gender {
-			points := (basePoints * 5) / denom
+			points :=  basePoints/ float64(denom)
 			//fmt.Printf("%d %s %s %f\n", athlete.id, athlete.name, race.name, points)
 			athlete.raceResults = append(athlete.raceResults, RaceResult{race, float32(points)})
-			denom = denom + 1.0
+			denom = denom + 1
 		}
 	}
 }
