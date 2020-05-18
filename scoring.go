@@ -42,8 +42,9 @@ type AN struct {
 	age  int
 }
 
-var athlete_db = make(map[string][]AN)
-var athlete_count = 0
+var athleteDb = make(map[string][]AN)
+var athleteCount = 0
+var races = make([]*Race, 100)
 
 // Abs returns the absolute value of x.
 func abs(x int) int {
@@ -53,9 +54,9 @@ func abs(x int) int {
 	return x
 }
 
-func new_athlete() int {
-	athlete_count = athlete_count + 1
-	return athlete_count
+func newAthlete() int {
+	athleteCount = athleteCount + 1
+	return athleteCount
 }
 
 //taking a name an an age, return an athlete ID
@@ -63,11 +64,11 @@ func GetId(name string, age int) int {
 	name = strings.ToUpper(name)
 	name = strings.TrimSpace(name)
 
-	athleteList, ok := athlete_db[name]
+	athleteList, ok := athleteDb[name]
 
 	if ok == false {
-		id := new_athlete()
-		athlete_db[name] = []AN{{id, name, age}}
+		id := newAthlete()
+		athleteDb[name] = []AN{{id, name, age}}
 		return id
 	} else {
 		if age == 0 {
@@ -82,9 +83,9 @@ func GetId(name string, age int) int {
 				return athlete.id
 			}
 		}
-		id := new_athlete()
+		id := newAthlete()
 		athleteList = append(athleteList, AN{id, name, age})
-		athlete_db[name] = athleteList
+		athleteDb[name] = athleteList
 		return id
 	}
 }
@@ -92,7 +93,7 @@ func GetId(name string, age int) int {
 //turn a CSV line into an athlete
 //intended to return null if there is no gender
 func athleteFromLine(line []string) *Athlete {
-	var athlete Athlete
+	var athlete *Athlete
 	name := line[1]
 	age, err := strconv.Atoi(line[2])
 	if err != nil {
@@ -110,16 +111,13 @@ func athleteFromLine(line []string) *Athlete {
 		sex = strings.ToUpper(sex)[:1]
 		if sex == "F" || sex == "M" {
 			id := GetId(name, age)
-			athlete = Athlete{id, name, age, sex, foreign, make([]RaceResult, 1)}
-		} /*else {
-			println("improper sex:", sex)
-		}*/
+			athlete = &Athlete{id, name, age, sex, foreign, make([]RaceResult, 1)}
+		}
 	}
-	return &athlete
+	return athlete
 }
 
 func process(fn string) *Race {
-
 	csvfile, err := os.Open(fn)
 	if err != nil {
 		log.Fatalln("Couldn't open the csv file", err)
@@ -137,28 +135,14 @@ func process(fn string) *Race {
 	raceDateStr := popper()
 	raceDate, _ := time.Parse(layoutISO, raceDateStr)
 
-	//loc, _ := time.LoadLocation("UTC")
-
-	//println("--------------")
-	//println("race:", fn)
-	//y,m,d := raceDate.Date()
-
-	//fmt.Printf("%s -- %d %d %d",raceDateStr, y,m,d)
-
-	//if y<1900 {
-	//	panic("y")
-	//}
-
 	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
-		//println("Skipping")
 		return nil
 	}
 
 	println("Loading ", fn)
 
-
 	popper()
-	
+
 	racePointsString := popper()
 	racePointsString = strings.Split(racePointsString, ",")[0]
 	racePointsString = strings.Split(racePointsString, "#")[0]
@@ -193,14 +177,8 @@ func process(fn string) *Race {
 
 		if athlete != nil {
 			athletes = append(athletes, *athlete)
-			//print(".")
-		} /*else {
-			println("unable to parse line :")
-			for i := 0; i < len(record); i++ {
-				print(record[i], ",")
-			}
 
-		} */
+		}
 	}
 
 	return &Race{raceName, racePoints, raceDate, athletes}
@@ -230,11 +208,11 @@ func scanFiles() {
 			fmt.Printf("date: %v\n", race.date)
 			fmt.Printf("points: %d\n", race.points)
 			fmt.Printf("athlete count: %v\n", len(race.athletes))
-			raceCount++
+			races = append(races, race)
 			aCount += len(race.athletes)
 		}
 	}
-	println("%d races and %d athletes", raceCount, athlete_count)
+	println("%d races and %d athletes", raceCount, athleteCount)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {

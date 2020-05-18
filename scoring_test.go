@@ -43,7 +43,7 @@ func TestGetId(t *testing.T) {
 		t.Error("in-her-prime erin should be 3")
 	}
 
-	if athlete_db["ERIN BRAND"][0].age != 50 {
+	if athleteDb["ERIN BRAND"][0].age != 50 {
 		t.Error("erin should be updated")
 	}
 
