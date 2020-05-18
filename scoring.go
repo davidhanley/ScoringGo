@@ -8,7 +8,7 @@ import (
 	//"regexp"
 	"strings"
 	"io"
-	"net/http"
+	//"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -44,7 +44,7 @@ type Race struct {
 
 var athleteDb = make(map[string][]*Athlete)
 var athleteCount = 0
-var races = make([]*Race, 100)
+var races = make([]*Race, 0)
 
 // Abs returns the absolute value of x.
 func abs(x int) int {
@@ -64,13 +64,13 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 	name = strings.ToUpper(name)
 	name = strings.TrimSpace(name)
 
-	athleteList, ok := athleteDb[name]
+	athleteList := athleteDb[name]
 
-	if ok == false {
+	if len(athleteList) ==0 {
 		id := newAthlete()
-		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 1)}
+		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 0)}
 		athleteList = append(athleteList, na)
-		athleteDb[name] = make([]*Athlete, 0)
+		athleteDb[name] = athleteList
 		return na
 	} else {
 		if age == 0 {
@@ -86,7 +86,7 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 			}
 		}
 		id := newAthlete()
-		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 1)}
+		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 0)}
 		athleteList = append(athleteList, na)
 		athleteDb[name] = athleteList
 		return na
@@ -100,7 +100,7 @@ func athleteFromLine(line []string) *Athlete {
 	name := line[1]
 	age, err := strconv.Atoi(line[2])
 	if err != nil {
-		age = -1
+		age = 0
 	}
 	sex := line[3]
 	foreign := false
@@ -155,7 +155,7 @@ func process(fn string) *Race {
 		panic(fmt.Sprintf("unable to parse points string %s for race %s", racePointsString, fn))
 	}
 
-	athletes := make([]*Athlete, 0, 500)
+	athletes := make([]*Athlete, 0)
 
 	csvfile.Seek(0, io.SeekStart)
 	r := csv.NewReader(csvfile)
@@ -186,7 +186,6 @@ func process(fn string) *Race {
 }
 
 func scoreGender(race *Race, gender string) {
-
 	basePoints := float64(race.points)
 	denom := 5.0
 	athletes := race.athletes
@@ -194,6 +193,7 @@ func scoreGender(race *Race, gender string) {
 		athlete := athletes[i]
 		if athlete.sex == gender {
 			points := (basePoints * 5) / denom
+			//fmt.Printf("%d %s %s %f\n", athlete.id, athlete.name, race.name, points)
 			athlete.raceResults = append(athlete.raceResults, RaceResult{race, float32(points)})
 			denom = denom + 1.0
 		}
@@ -231,15 +231,23 @@ func scanFiles() {
 	}
 	fmt.Printf("%d races and %d athletes", len(races), athleteCount)
 
-	/*jd := athleteDb["JOSH DUNCAN"][0]
-	print(jd.name)
-	results := jd.raceResults
-	*/
+	println("-----------------------------------")
+	jda := athleteDb["DAVID HANLEY"]
+	for j := 0; j < len(jda); j++ {
+		jd := jda[j]
+		println(jd.name,jd.age)
+		results := jd.raceResults
+		for i := 0; i < len(results); i++ {
+			r := results[i]
+			fmt.Printf("%s %f\n", r.race.name, r.points)
+		}
+	}
+
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+/*func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
-}
+}*/
 
 func main() {
 	scanFiles()

@@ -3,43 +3,39 @@ package main
 import "testing"
 
 func TestGetId(t *testing.T) {
-	if GetId("david hanley", 47) != 1 {
+	if LookupAthlete("david hanley", 47,"M",false).id != 1 {
 		t.Error("first ID not one")
 	}
 
-	if GetId("david hanley", 47) != 1 {
+	if LookupAthlete("david hanley", 47,"M",false).id != 1 {
 		t.Error("should be same dave")
 	}
 
-	if GetId("david hanley", 48) != 1 {
+	if LookupAthlete("david hanley", 48,"M",false).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if GetId("david hanley", 46) != 1 {
+	if LookupAthlete("david hanley", 46,"M",false).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if GetId("David Hanley", 46) != 1 {
+	if LookupAthlete("david hanley", 0,"M",false).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if GetId("david hanley", 0) != 1 {
-		t.Error("should still be same dave")
-	}
-
-	if GetId("david hanley", 25) != 2 {
+	if LookupAthlete("david hanley", 25,"M",false).id != 2 {
 		t.Error("should be a new dave now")
 	}
 
-	if GetId("david hanley", 25) != 2 {
+	if LookupAthlete("david hanley", 25,"M",false).id != 2 {
 		t.Error("but still that same one")
 	}
 
-	if GetId("erin brand", 0) != 3 {
+	if LookupAthlete("erin brand", 0,"F",false).id != 3 {
 		t.Error("young erin should be 3")
 	}
 
-	if GetId("erin brand", 50) != 3 {
+	if LookupAthlete("erin brand", 50,"F",false).id != 3 {
 		t.Error("in-her-prime erin should be 3")
 	}
 
