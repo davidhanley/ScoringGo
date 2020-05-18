@@ -2,10 +2,9 @@ package main
 
 import (
 	"bufio"
-	"encoding/csv"
+	//"encoding/csv"
 	"fmt"
 	"log"
-	//"regexp"
 	"strings"
 	"io"
 	//"net/http"
@@ -66,7 +65,7 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 
 	athleteList := athleteDb[name]
 
-	if len(athleteList) ==0 {
+	if len(athleteList) == 0 {
 		id := newAthlete()
 		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 0)}
 		athleteList = append(athleteList, na)
@@ -97,23 +96,24 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 //intended to return null if there is no gender
 func athleteFromLine(line []string) *Athlete {
 	var athlete *Athlete
-	name := line[1]
-	age, err := strconv.Atoi(line[2])
-	if err != nil {
-		age = 0
-	}
-	sex := line[3]
-	foreign := false
-	if len(sex) > 0 && sex[0] == '*' {
-		print("FORREIGN!!")
-		foreign = true
-		sex = sex[1:]
-	}
+	if len(line) >= 4 {
+		name := line[1]
+		age, err := strconv.Atoi(line[2])
+		if err != nil {
+			age = 0
+		}
+		sex := line[3]
+		foreign := false
+		if len(sex) > 0 && sex[0] == '*' {
+			foreign = true
+			sex = sex[1:]
+		}
 
-	if len(sex) > 0 {
-		sex = strings.ToUpper(sex)[:1]
-		if sex == "F" || sex == "M" {
-			athlete = LookupAthlete(name, age, sex, foreign)
+		if len(sex) > 0 {
+			sex = strings.ToUpper(sex)[:1]
+			if sex == "F" || sex == "M" {
+				athlete = LookupAthlete(name, age, sex, foreign)
+			}
 		}
 	}
 	return athlete
@@ -139,10 +139,9 @@ func process(fn string) *Race {
 	raceDate, _ := time.Parse(layoutISO, raceDateStr)
 
 	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
-		y,m,d := raceDate.Date()
-		println(raceDateStr,y,m,d)
-		println("skipping ",fn,raceName)
-
+		y, m, d := raceDate.Date()
+		println(raceDateStr, y, m, d)
+		println("skipping ", fn, raceName)
 		return nil
 	}
 
@@ -162,18 +161,17 @@ func process(fn string) *Race {
 
 	athletes := make([]*Athlete, 0)
 
-	csvfile.Seek(0, io.SeekStart)
-	r := csv.NewReader(csvfile)
-	r.Read()
-	r.Read()
-	r.Read()
 	for {
-		r.FieldsPerRecord = 0
-		record, err := r.Read()
+		line, err := reader.ReadString('\n')
 
 		if err == io.EOF {
 			break
 		}
+		record := strings.Split(line,",")
+		for i := 0; i < len(record) ; i++ {
+			record[i] = strings.TrimSpace(record[i])
+		}
+
 		if err != nil {
 			println("err!")
 			log.Fatal(err)
@@ -196,7 +194,7 @@ func scoreGender(race *Race, gender string) {
 	for i := 0; i < len(athletes); i++ {
 		athlete := athletes[i]
 		if athlete.sex == gender {
-			points :=  basePoints/ float64(denom)
+			points := basePoints / float64(denom)
 			//fmt.Printf("%d %s %s %f\n", athlete.id, athlete.name, race.name, points)
 			athlete.raceResults = append(athlete.raceResults, RaceResult{race, float32(points)})
 			denom = denom + 1
@@ -239,7 +237,7 @@ func scanFiles() {
 	jda := athleteDb["DAVID HANLEY"]
 	for j := 0; j < len(jda); j++ {
 		jd := jda[j]
-		println(jd.name,jd.age)
+		println(jd.name, jd.age)
 		results := jd.raceResults
 		for i := 0; i < len(results); i++ {
 			r := results[i]
