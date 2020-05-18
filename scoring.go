@@ -33,16 +33,16 @@ type Race struct {
 	name     string
 	points   int
 	date     time.Time
-	athletes []Athlete
+	athletes []*Athlete
 }
 
-type AN struct {
+/*type AN struct {
 	id   int
 	name string
 	age  int
-}
+}*/
 
-var athleteDb = make(map[string][]AN)
+var athleteDb = make(map[string][]*Athlete)
 var athleteCount = 0
 var races = make([]*Race, 100)
 
@@ -60,7 +60,7 @@ func newAthlete() int {
 }
 
 //taking a name an an age, return an athlete ID
-func GetId(name string, age int) int {
+func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 	name = strings.ToUpper(name)
 	name = strings.TrimSpace(name)
 
@@ -68,25 +68,28 @@ func GetId(name string, age int) int {
 
 	if ok == false {
 		id := newAthlete()
-		athleteDb[name] = []AN{{id, name, age}}
-		return id
+		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 1)}
+		athleteList = append(athleteList, na)
+		athleteDb[name] = make([]*Athlete, 0)
+		return na
 	} else {
 		if age == 0 {
-			return athleteList[0].id
+			return athleteList[0]
 		}
 		for aid := range athleteList {
-			athlete := &athleteList[aid]
+			athlete := athleteList[aid]
 			if athlete.age == 0 {
 				athlete.age = age
 			}
 			if abs(athlete.age-age) < 2 {
-				return athlete.id
+				return athlete
 			}
 		}
 		id := newAthlete()
-		athleteList = append(athleteList, AN{id, name, age})
+		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 1)}
+		athleteList = append(athleteList, na)
 		athleteDb[name] = athleteList
-		return id
+		return na
 	}
 }
 
@@ -110,8 +113,7 @@ func athleteFromLine(line []string) *Athlete {
 	if len(sex) > 0 {
 		sex = strings.ToUpper(sex)[:1]
 		if sex == "F" || sex == "M" {
-			id := GetId(name, age)
-			athlete = &Athlete{id, name, age, sex, foreign, make([]RaceResult, 1)}
+			athlete = LookupAthlete(name, age, sex, foreign)
 		}
 	}
 	return athlete
@@ -153,7 +155,7 @@ func process(fn string) *Race {
 		panic(fmt.Sprintf("unable to parse points string %s for race %s", racePointsString, fn))
 	}
 
-	athletes := make([]Athlete, 0, 500)
+	athletes := make([]*Athlete, 0, 500)
 
 	csvfile.Seek(0, io.SeekStart)
 	r := csv.NewReader(csvfile)
@@ -176,27 +178,26 @@ func process(fn string) *Race {
 		athlete := athleteFromLine(record)
 
 		if athlete != nil {
-			athletes = append(athletes, *athlete)
-
+			athletes = append(athletes, athlete)
 		}
 	}
 
 	return &Race{raceName, racePoints, raceDate, athletes}
 }
 
-func scoreGender(race *Race, gender string ) {
+func scoreGender(race *Race, gender string) {
 
-  basePoints := float64(race.points)
-  denom := 5.0
-  athletes := race.athletes
-  for i := 0 ; i < len(athletes) ; i++ {
-  	athlete := athletes[i]
-  	if ( athlete.sex == gender) {
-  		points := ( basePoints * 5 ) / denom
-  		athlete.raceResults = append(athlete.raceResults,RaceResult{race,float32(points)})
-  		denom = denom + 1.0
+	basePoints := float64(race.points)
+	denom := 5.0
+	athletes := race.athletes
+	for i := 0; i < len(athletes); i++ {
+		athlete := athletes[i]
+		if athlete.sex == gender {
+			points := (basePoints * 5) / denom
+			athlete.raceResults = append(athlete.raceResults, RaceResult{race, float32(points)})
+			denom = denom + 1.0
+		}
 	}
-  }
 }
 
 func scanFiles() {
@@ -223,8 +224,8 @@ func scanFiles() {
 			fmt.Printf("points: %d\n", race.points)
 			fmt.Printf("athlete count: %v\n", len(race.athletes))
 			races = append(races, race)
-			scoreGender(race,"F")
-			scoreGender(race,"M")
+			scoreGender(race, "F")
+			scoreGender(race, "M")
 			aCount += len(race.athletes)
 		}
 	}
@@ -233,7 +234,7 @@ func scanFiles() {
 	/*jd := athleteDb["JOSH DUNCAN"][0]
 	print(jd.name)
 	results := jd.raceResults
-    */
+	*/
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
