@@ -1,4 +1,4 @@
-package scoring
+package main
 
 import (
 	"encoding/csv"
@@ -90,7 +90,7 @@ func athleteFromLine(line []string) Athlete {
 	if err != nil {
 		age = -1
 	}
-	sex := line[2]
+	sex := line[3]
 	foreign := false
 	if len(sex) > 0 && sex[0] == '*' {
 		print("FORREIGN!!")
@@ -103,13 +103,15 @@ func athleteFromLine(line []string) Athlete {
 		if sex == "F" || sex == "M" {
 			id := GetId(name, age)
 			athlete = Athlete{id, name, age, sex, foreign}
-		}
+		} /*else {
+			println("improper sex:", sex)
+		}*/
 	}
 	return athlete
 }
 
 func process(fn string) Race {
-	println("Loading", fn)
+
 	csvfile, err := os.Open(fn)
 
 	if err != nil {
@@ -117,17 +119,37 @@ func process(fn string) Race {
 	}
 
 	defer csvfile.Close()
-	
+
 	r := csv.NewReader(csvfile)
 
 	popper := func() string {
 		line, _ := r.Read()
-		return line[0]
+		return strings.TrimSpace(line[0])
 	}
 
 	raceName := popper()
-	layoutISO := "2006-01-02"
-	raceDate, _ := time.Parse(layoutISO, popper())
+	layoutISO := "2006-1-2"
+	raceDateStr := popper()
+	raceDate, _ := time.Parse(layoutISO, raceDateStr)
+
+	//loc, _ := time.LoadLocation("UTC")
+
+	//println("--------------")
+	println("race:", fn)
+	//y,m,d := raceDate.Date()
+
+	//fmt.Printf("%s -- %d %d %d",raceDateStr, y,m,d)
+
+	//if y<1900 {
+	//	panic("y")
+	//}
+
+	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
+		//println("Skipping")
+		return Race{}
+	}
+
+	println("Loading ",fn)
 
 	popper()
 
@@ -138,6 +160,7 @@ func process(fn string) Race {
 	for {
 		r.FieldsPerRecord = 0
 		record, err := r.Read()
+
 		if err == io.EOF {
 			break
 		}
@@ -150,10 +173,15 @@ func process(fn string) Race {
 
 		if athlete != (Athlete{}) {
 			athletes = append(athletes, athlete)
-		}
+			//print(".")
+		} /*else {
+			println("unable to parse line :")
+			for i := 0; i < len(record); i++ {
+				print(record[i], ",")
+			}
+
+		} */
 	}
-
-
 
 	return Race{raceName, racePoints, raceDate, athletes}
 }
