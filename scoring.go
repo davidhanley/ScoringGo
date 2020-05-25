@@ -17,6 +17,7 @@ import (
 type RaceResult struct {
 	race   *Race
 	points float32
+	rank   int
 }
 
 type Athlete struct {
@@ -25,7 +26,7 @@ type Athlete struct {
 	age         int
 	sex         string
 	foreign     bool
-	raceResults []RaceResult
+	raceResults [][]RaceResult
 }
 
 type Race struct {
@@ -58,6 +59,14 @@ func newAthlete() int {
 	return athleteCount
 }
 
+func makeResultSet() [][]RaceResult {
+	rs := make([][]RaceResult, 3)
+	for a := 0; a < 3; a++ {
+		rs[a] = make([]RaceResult, 0)
+	}
+	return rs
+}
+
 //taking a name an an age, return an athlete ID
 func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 	name = strings.ToUpper(name)
@@ -65,9 +74,10 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 
 	athleteList := athleteDb[name]
 
+	newAth := func() *Athlete { return &Athlete{newAthlete(), name, age, sex, foreign, makeResultSet()} }
+
 	if len(athleteList) == 0 {
-		id := newAthlete()
-		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 0)}
+		na := newAth()
 		athleteList = append(athleteList, na)
 		athleteDb[name] = athleteList
 		return na
@@ -84,8 +94,7 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 				return athlete
 			}
 		}
-		id := newAthlete()
-		na := &Athlete{id, name, age, sex, foreign, make([]RaceResult, 0)}
+		na := newAth()
 		athleteList = append(athleteList, na)
 		athleteDb[name] = athleteList
 		return na
@@ -117,6 +126,23 @@ func athleteFromLine(line []string) *Athlete {
 		}
 	}
 	return athlete
+}
+
+func scoreGender(race *Race, gender string, include_foreign bool, ) {
+	basePoints := float64(race.points * 5)
+	denom := 5
+	athletes := race.athletes
+	for i := 0; i < len(athletes); i++ {
+		athlete := athletes[i]
+		if athlete.sex == gender && (athlete.foreign == false || include_foreign) {
+			points := basePoints / float64(denom)
+			//fmt.Printf("%d %s %s %f\n", athlete.id, athlete.name, race.name, points)
+			rr := RaceResult{race, float32(points), denom - 4}
+			athlete.raceResults[0] = append(athlete.raceResults[0], rr)
+			//fmt.Printf("%s %d %f\n", athlete.name, rr.rank , rr.points)
+			denom = denom + 1
+		}
+	}
 }
 
 func process(fn string) *Race {
@@ -167,8 +193,8 @@ func process(fn string) *Race {
 		if err == io.EOF {
 			break
 		}
-		record := strings.Split(line,",")
-		for i := 0; i < len(record) ; i++ {
+		record := strings.Split(line, ",")
+		for i := 0; i < len(record); i++ {
 			record[i] = strings.TrimSpace(record[i])
 		}
 
@@ -185,24 +211,9 @@ func process(fn string) *Race {
 	}
 
 	race := &Race{raceName, racePoints, raceDate, athletes}
-	scoreGender(race, "F")
-	scoreGender(race, "M")
+	//scoreGender(race, "F")
+	//scoreGender(race, "M")
 	return race
-}
-
-func scoreGender(race *Race, gender string) {
-	basePoints := float64(race.points * 5)
-	denom := 5
-	athletes := race.athletes
-	for i := 0; i < len(athletes); i++ {
-		athlete := athletes[i]
-		if athlete.sex == gender {
-			points := basePoints / float64(denom)
-			//fmt.Printf("%d %s %s %f\n", athlete.id, athlete.name, race.name, points)
-			athlete.raceResults = append(athlete.raceResults, RaceResult{race, float32(points)})
-			denom = denom + 1
-		}
-	}
 }
 
 func scanFiles() {
@@ -234,7 +245,7 @@ func scanFiles() {
 	}
 	fmt.Printf("%d races and %d athletes", len(races), athleteCount)
 
-	println("-----------------------------------")
+	/*println("-----------------------------------")
 	jda := athleteDb["DAVID HANLEY"]
 	for j := 0; j < len(jda); j++ {
 		jd := jda[j]
@@ -244,7 +255,7 @@ func scanFiles() {
 			r := results[i]
 			fmt.Printf("%s %f\n", r.race.name, r.points)
 		}
-	}
+	}*/
 
 }
 
