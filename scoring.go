@@ -12,21 +12,21 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+	"sort"
 )
 
-type RaceResult struct {
+type AthleteRaceResult struct {
 	race   *Race
 	points float32
 	rank   int
 }
 
 type Athlete struct {
-	id          int
-	name        string
-	age         int
-	sex         string
-	foreign     bool
-	raceResults [][]RaceResult
+	id      int
+	name    string
+	age     int
+	sex     string
+	foreign bool
 }
 
 type Race struct {
@@ -35,12 +35,6 @@ type Race struct {
 	date     time.Time
 	athletes []*Athlete
 }
-
-/*type AN struct {
-	id   int
-	name string
-	age  int
-}*/
 
 var athleteDb = make(map[string][]*Athlete)
 var athleteCount = 0
@@ -59,12 +53,13 @@ func newAthlete() int {
 	return athleteCount
 }
 
-func makeResultSet() [][]RaceResult {
-	rs := make([][]RaceResult, 3)
-	for a := 0; a < 3; a++ {
-		rs[a] = make([]RaceResult, 0)
-	}
-	return rs
+type CategoryResult struct {
+	gender          string
+	age_low         int
+	age_high        int
+	include_foreign bool
+
+	results map[Athlete][]*AthleteRaceResult
 }
 
 //taking a name an an age, return an athlete ID
@@ -74,7 +69,7 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 
 	athleteList := athleteDb[name]
 
-	newAth := func() *Athlete { return &Athlete{newAthlete(), name, age, sex, foreign, makeResultSet()} }
+	newAth := func() *Athlete { return &Athlete{newAthlete(), name, age, sex, foreign} }
 
 	if len(athleteList) == 0 {
 		na := newAth()
@@ -128,25 +123,8 @@ func athleteFromLine(line []string) *Athlete {
 	return athlete
 }
 
-func scoreGender(race *Race, gender string, include_foreign bool, ) {
-	basePoints := float64(race.points * 5)
-	denom := 5
-	athletes := race.athletes
-	for i := 0; i < len(athletes); i++ {
-		athlete := athletes[i]
-		if athlete.sex == gender && (athlete.foreign == false || include_foreign) {
-			points := basePoints / float64(denom)
-			//fmt.Printf("%d %s %s %f\n", athlete.id, athlete.name, race.name, points)
-			rr := RaceResult{race, float32(points), denom - 4}
-			athlete.raceResults[0] = append(athlete.raceResults[0], rr)
-			//fmt.Printf("%s %d %f\n", athlete.name, rr.rank , rr.points)
-			denom = denom + 1
-		}
-	}
-}
-
-func process(fn string) *Race {
-	csvfile, err := os.Open(fn)
+func loadARace(filename string) *Race {
+	csvfile, err := os.Open(filename)
 	if err != nil {
 		log.Fatalln("Couldn't open the csv file", err)
 	}
@@ -167,11 +145,11 @@ func process(fn string) *Race {
 	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
 		y, m, d := raceDate.Date()
 		println(raceDateStr, y, m, d)
-		println("skipping ", fn, raceName)
+		println("skipping ", filename, raceName)
 		return nil
 	}
 
-	println("Loading ", fn)
+	println("Loading ", filename)
 
 	popper()
 
@@ -180,9 +158,10 @@ func process(fn string) *Race {
 	racePointsString = strings.Split(racePointsString, "#")[0]
 
 	var racePoints int
+
 	fmt.Sscanf(racePointsString, "%d", &racePoints)
 	if racePoints == 0 {
-		panic(fmt.Sprintf("unable to parse points string %s for race %s", racePointsString, fn))
+		panic(fmt.Sprintf("unable to parse points string %s for race %s", racePointsString, filename))
 	}
 
 	athletes := make([]*Athlete, 0)
@@ -211,15 +190,58 @@ func process(fn string) *Race {
 	}
 
 	race := &Race{raceName, racePoints, raceDate, athletes}
-	//scoreGender(race, "F")
-	//scoreGender(race, "M")
+
 	return race
+}
+
+func scoreGender(race *Race, gender string, include_foreign bool, result *CategoryResult) {
+	basePoints := float64(race.points * 5)
+	denom := 5
+	athletes := race.athletes
+	for i := 0; i < len(athletes); i++ {
+		athlete := *athletes[i]
+		if athlete.sex == gender &&
+			(athlete.foreign == false || include_foreign) &&
+			(athlete.age >= result.age_low && athlete.age <= result.age_high) {
+			points := basePoints / float64(denom)
+			rr := AthleteRaceResult{race, float32(points), denom - 4}
+			races := result.results
+			if races[athlete] == nil {
+				races[athlete] = make([]*AthleteRaceResult, 0)
+			}
+			races[athlete] = append(races[athlete], &rr)
+			denom = denom + 1
+		}
+	}
+}
+
+func computeOverallForCategory(result *CategoryResult) {
+
+	for _, results := range result.results {
+		if len(results) > 5 {
+			sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
+			//println("")
+			//println(ath.name)
+			//for _,r := range results {
+			//println(r.race.name,r.points)
+			//}
+		}
+
+	}
+}
+
+func computeCategory(cr *CategoryResult) {
+	for _, race := range races {
+		scoreGender(race, cr.gender, cr.include_foreign, cr)
+	}
+	computeOverallForCategory(cr)
 }
 
 func scanFiles() {
 	var files []string
 
 	root := "data/"
+
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		files = append(files, path)
 		return nil
@@ -233,7 +255,7 @@ func scanFiles() {
 
 	aCount := 0
 	for _, file := range files {
-		race := process(file)
+		race := loadARace(file)
 		if race != nil {
 			fmt.Printf("race: %v\n", race.name)
 			fmt.Printf("date: %v\n", race.date)
@@ -243,20 +265,34 @@ func scanFiles() {
 			aCount += len(race.athletes)
 		}
 	}
-	fmt.Printf("%d races and %d athletes", len(races), athleteCount)
+	//fmt.Printf("%d races and %d athletes", len(races), athleteCount)
+}
 
-	/*println("-----------------------------------")
-	jda := athleteDb["DAVID HANLEY"]
-	for j := 0; j < len(jda); j++ {
-		jd := jda[j]
-		println(jd.name, jd.age)
-		results := jd.raceResults
-		for i := 0; i < len(results); i++ {
-			r := results[i]
-			fmt.Printf("%s %f\n", r.race.name, r.points)
+func computeCategories() {
+	genders := []string{"F", "M"}
+	tf := []bool{true, false}
+	ageRanges := [][]int{{0, 200}, {0, 9}, {10, 19}, {20, 29}, {30, 39}, {40, 49}, {50, 59}, {60, 69}, {70, 79}, {80, 200}}
+
+	for _, gender := range genders {
+		for _, foreign := range tf {
+			for _, ar := range ageRanges {
+				arr := make(map[Athlete][]*AthleteRaceResult, 0)
+				cr := &CategoryResult{
+					gender:          gender,
+					age_low:         ar[0],
+					age_high:        ar[1],
+					include_foreign: foreign,
+					results:         arr,
+				}
+				computeCategory(cr)
+				println("---------------------------------")
+				fmt.Printf("gender: %s\n", gender)
+				fmt.Printf("age range: %d %d\n", ar[0], ar[1])
+				fmt.Printf("Foreign: %t\n", foreign)
+				fmt.Printf("count: %d\n", len(cr.results))
+			}
 		}
-	}*/
-
+	}
 }
 
 /*func handler(w http.ResponseWriter, r *http.Request) {
@@ -265,6 +301,7 @@ func scanFiles() {
 
 func main() {
 	scanFiles()
+	computeCategories()
 	//http.HandleFunc("/", handler)
 	//log.Fatal(http.ListenAndServe(":8080", nil))
 }

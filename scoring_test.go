@@ -45,8 +45,10 @@ func TestGetId(t *testing.T) {
 	if athleteDb["ERIN BRAND"][0].age != 50 {
 		t.Error("erin should be updated")
 	}
+}
 
-	race := process("data/2020-scale-the-strat.csv")
+func TestLoadRace(t *testing.T) {
+	race := loadARace("data/2020-scale-the-strat.csv")
 
 	if race.name != "2020 Scale The Strat" {
 		t.Error("scale the strat name is wrong")
@@ -56,10 +58,10 @@ func TestGetId(t *testing.T) {
 		t.Error("strat points are wrong")
 	}
 
-	scoreGender(race, "M", false)
-	scoreGender(race, "F", false)
+	scoreGender(race, "M", true)
+	scoreGender(race, "F", true)
 
-	/*first := race.athletes[0]
+	first := race.athletes[0]
 
 	if first.foreign == false {
 		t.Error("the winner was foreign...")
@@ -67,7 +69,7 @@ func TestGetId(t *testing.T) {
 
 	if first.raceResults[0].points != 350.0 {
 		t.Error("the winner points are wrong...")
-	}*/
+	}
 
 	dave := race.athletes[27]
 
@@ -75,7 +77,7 @@ func TestGetId(t *testing.T) {
 		t.Error("dave is not foreign")
 	}
 
-	daveFirstResult := dave.raceResults[0][0]
+	daveFirstResult := dave.raceResults[0]
 
 	if daveFirstResult.rank != 22 {
 		t.Error(fmt.Sprintf("dave rank (%d)is wrong...", daveFirstResult.rank))
