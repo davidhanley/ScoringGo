@@ -27,6 +27,7 @@ type Athlete struct {
 	age     int
 	sex     string
 	foreign bool
+	points  float32
 }
 
 type Race struct {
@@ -60,6 +61,8 @@ type CategoryResult struct {
 	include_foreign bool
 
 	results map[Athlete][]*AthleteRaceResult
+
+	sorted []Athlete
 }
 
 //taking a name an an age, return an athlete ID
@@ -69,7 +72,7 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 
 	athleteList := athleteDb[name]
 
-	newAth := func() *Athlete { return &Athlete{newAthlete(), name, age, sex, foreign} }
+	newAth := func() *Athlete { return &Athlete{newAthlete(), name, age, sex, foreign, 0.0} }
 
 	if len(athleteList) == 0 {
 		na := newAth()
@@ -215,19 +218,23 @@ func scoreGender(race *Race, gender string, include_foreign bool, result *Catego
 	}
 }
 
-func computeOverallForCategory(result *CategoryResult) {
-
-	for _, results := range result.results {
-		if len(results) > 5 {
-			sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
-			//println("")
-			//println(ath.name)
-			//for _,r := range results {
-			//println(r.race.name,r.points)
-			//}
+func computeOverallForCategory(category *CategoryResult) {
+	aresults := make([]Athlete, 0)
+	for ath, results := range category.results {
+		sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
+		points := float32(0.0)
+		for i, r := range results {
+			if i < 5 {
+				points = points + r.points
+			}
+			ath.points = points
+			aresults = append(aresults, ath)
 		}
-
 	}
+	sort.Slice(aresults, func(i, j int) bool {
+		return aresults[i].points > aresults[j].points
+	})
+	category.sorted = aresults
 }
 
 func computeCategory(cr *CategoryResult) {
@@ -290,6 +297,11 @@ func computeCategories() {
 				fmt.Printf("age range: %d %d\n", ar[0], ar[1])
 				fmt.Printf("Foreign: %t\n", foreign)
 				fmt.Printf("count: %d\n", len(cr.results))
+				for a := 0; a < 5; a++ {
+					ath := cr.sorted[a]
+					fmt.Printf("%s %d %f\n", ath.name, ath.age, ath.points)
+
+				}
 			}
 		}
 	}
