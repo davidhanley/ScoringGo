@@ -16,6 +16,7 @@ import (
 )
 
 type AthleteRaceResult struct {
+	ath    Athlete
 	race   *Race
 	points float32
 	rank   int
@@ -55,14 +56,15 @@ func newAthlete() int {
 }
 
 type CategoryResult struct {
+	//athlete         Athlete
 	gender          string
 	age_low         int
 	age_high        int
 	include_foreign bool
 
-	results map[Athlete][]*AthleteRaceResult
+	results map[string][]*AthleteRaceResult
 
-	sorted []Athlete
+	sortedAthletes []Athlete
 }
 
 //taking a name an an age, return an athlete ID
@@ -197,9 +199,12 @@ func loadARace(filename string) *Race {
 	return race
 }
 
+
+
 func scoreGender(race *Race, gender string, include_foreign bool, result *CategoryResult) {
-	basePoints := float64(race.points * 5)
-	denom := 5
+	startFraction := 5
+	basePoints := float64(race.points * startFraction)
+	denom := startFraction
 	athletes := race.athletes
 	for i := 0; i < len(athletes); i++ {
 		athlete := *athletes[i]
@@ -207,12 +212,18 @@ func scoreGender(race *Race, gender string, include_foreign bool, result *Catego
 			(athlete.foreign == false || include_foreign) &&
 			(athlete.age >= result.age_low && athlete.age <= result.age_high) {
 			points := basePoints / float64(denom)
-			rr := AthleteRaceResult{race, float32(points), denom - 4}
-			races := result.results
-			if races[athlete] == nil {
-				races[athlete] = make([]*AthleteRaceResult, 0)
+			rr := AthleteRaceResult{athlete, race, float32(points), denom - 4}
+			athletesRaces := result.results
+			println("foo", athlete.name, points)
+			if athletesRaces == nil {
+				panic("race nil")
 			}
-			races[athlete] = append(races[athlete], &rr)
+
+			if athletesRaces[athlete.name] == nil {
+				athletesRaces[athlete.name] = make([]*AthleteRaceResult, 0)
+			}
+			athletesRaces[athlete.name] = append(athletesRaces[athlete.name], &rr)
+			result.sortedAthletes = append(result.sortedAthletes, athlete)
 			denom = denom + 1
 		}
 	}
@@ -220,21 +231,22 @@ func scoreGender(race *Race, gender string, include_foreign bool, result *Catego
 
 func computeOverallForCategory(category *CategoryResult) {
 	aresults := make([]Athlete, 0)
-	for ath, results := range category.results {
+	//first, compute the top five for each athlete
+	for _, results := range category.results {
 		sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
 		points := float32(0.0)
 		for i, r := range results {
 			if i < 5 {
 				points = points + r.points
 			}
-			ath.points = points
-			aresults = append(aresults, ath)
 		}
+
 	}
+	//next, sort the category by top five results per athlete
 	sort.Slice(aresults, func(i, j int) bool {
 		return aresults[i].points > aresults[j].points
 	})
-	category.sorted = aresults
+	category.sortedAthletes = aresults
 }
 
 func computeCategory(cr *CategoryResult) {
@@ -283,13 +295,16 @@ func computeCategories() {
 	for _, gender := range genders {
 		for _, foreign := range tf {
 			for _, ar := range ageRanges {
-				arr := make(map[Athlete][]*AthleteRaceResult, 0)
-				cr := &CategoryResult{
+				resultmap := make(map[string][]*AthleteRaceResult, 0)
+				sorted := make([]Athlete, 0)
+
+				var cr = &CategoryResult{
 					gender:          gender,
 					age_low:         ar[0],
 					age_high:        ar[1],
 					include_foreign: foreign,
-					results:         arr,
+					results:         resultmap,
+					sortedAthletes:  sorted,
 				}
 				computeCategory(cr)
 				println("---------------------------------")
@@ -298,7 +313,7 @@ func computeCategories() {
 				fmt.Printf("Foreign: %t\n", foreign)
 				fmt.Printf("count: %d\n", len(cr.results))
 				for a := 0; a < 5; a++ {
-					ath := cr.sorted[a]
+					ath := cr.sortedAthletes[a]
 					fmt.Printf("%s %d %f\n", ath.name, ath.age, ath.points)
 
 				}
