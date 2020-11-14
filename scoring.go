@@ -38,6 +38,17 @@ type Race struct {
 	athletes []*Athlete
 }
 
+type CategoryResult struct {
+	gender          string
+	age_low         int
+	age_high        int
+	include_foreign bool
+
+	results map[string][]*AthleteRaceResult
+
+	sortedAthletes []Athlete
+}
+
 var athleteDb = make(map[string][]*Athlete)
 var athleteCount = 0
 var races = make([]*Race, 0)
@@ -50,22 +61,12 @@ func abs(x int) int {
 	return x
 }
 
-func newAthlete() int {
+func newAthleteID() int {
 	athleteCount = athleteCount + 1
 	return athleteCount
 }
 
-type CategoryResult struct {
-	//athlete         Athlete
-	gender          string
-	age_low         int
-	age_high        int
-	include_foreign bool
 
-	results map[string][]*AthleteRaceResult
-
-	sortedAthletes []Athlete
-}
 
 //taking a name an an age, return an athlete ID
 func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
@@ -74,7 +75,7 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 
 	athleteList := athleteDb[name]
 
-	newAth := func() *Athlete { return &Athlete{newAthlete(), name, age, sex, foreign, 0.0} }
+	newAth := func() *Athlete { return &Athlete{newAthleteID(), name, age, sex, foreign, 0.0} }
 
 	if len(athleteList) == 0 {
 		na := newAth()
@@ -214,7 +215,6 @@ func scoreGender(race *Race, gender string, include_foreign bool, result *Catego
 			points := basePoints / float64(denom)
 			rr := AthleteRaceResult{athlete, race, float32(points), denom - 4}
 			athletesRaces := result.results
-			println("foo", athlete.name, points)
 			if athletesRaces == nil {
 				panic("race nil")
 			}
@@ -240,12 +240,15 @@ func computeOverallForCategory(category *CategoryResult) {
 				points = points + r.points
 			}
 		}
-
+		ath := results[0].ath
+		ath.points = points
+		aresults = append(aresults, ath)
 	}
 	//next, sort the category by top five results per athlete
 	sort.Slice(aresults, func(i, j int) bool {
 		return aresults[i].points > aresults[j].points
 	})
+
 	category.sortedAthletes = aresults
 }
 
