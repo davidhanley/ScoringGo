@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -59,7 +60,37 @@ func TestLoadRace(t *testing.T) {
 		t.Error("strat points are wrong")
 	}
 
+	//check the USA only resuts
+	overallUSA := getCategory("M", false, 0)
 
+	winnahUSA := overallUSA.sortedAthletes[0]
+
+	if winnahUSA.points != 350.0 {
+		t.Error("wrong winner points")
+	}
+
+	dave := overallUSA.sortedAthletes[20]
+	if dave.name != "DAVID HANLEY" {
+		t.Error("strat 20 isn't dave")
+	}
+
+	if dave.foreign == true {
+		t.Error("Dave isn't foreign")
+	}
+
+	if dave.points != 70.0 {
+		t.Error(fmt.Sprintf("Dave points are wrong (%f)", dave.points))
+	}
+
+	//now check foreign
+
+	overall := getCategory("M", true, 0)
+
+	winnahOverall := overall.sortedAthletes[0]
+
+	if winnahOverall.points != 350.0 {
+		t.Error("wrong winner points")
+	}
 
 	/* dave := race.athletes[27]
 
@@ -76,5 +107,5 @@ func TestLoadRace(t *testing.T) {
 	if daveFirstResult.points != 67.307693 {
 		t.Error(fmt.Printf("dave first points wrong: %f", daveFirstResult.points))
 	}
-  */
+	*/
 }

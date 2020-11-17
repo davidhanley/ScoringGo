@@ -299,6 +299,14 @@ func min(i int, j int) int {
 
 var categoryMap = make(map[string]*CategoryResult)
 
+func categoryKey(gender string, foreign bool, agecat int) string {
+	return fmt.Sprintf("%s%v%d", gender, foreign, agecat)
+}
+
+func getCategory(gender string, foreign bool, agecat int) *CategoryResult {
+	return categoryMap[categoryKey(gender, foreign, agecat)]
+}
+
 func computeCategories() {
 	genders := []string{"F", "M"}
 	tf := []bool{true, false}
@@ -306,7 +314,7 @@ func computeCategories() {
 
 	for _, gender := range genders {
 		for _, foreign := range tf {
-			for ai, ar := range ageRanges {
+			for ageIndex, ar := range ageRanges {
 
 				resultmap := make(map[string][]*AthleteRaceResult, 0)
 				sorted := make([]Athlete, 0)
@@ -321,8 +329,8 @@ func computeCategories() {
 				}
 				computeCategory(cr)
 
-				key := fmt.Sprintf("%s%v%d", gender, foreign, ai)
-				fmt.Printf("Cagegory key is:%s", key)
+				key := categoryKey(gender, foreign, ageIndex)
+
 				categoryMap[key] = cr
 
 				//println("---------------------------------")
