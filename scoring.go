@@ -162,9 +162,10 @@ func loadARace(filename string) *Race {
 	racePointsString = strings.Split(racePointsString, ",")[0]
 	racePointsString = strings.Split(racePointsString, "#")[0]
 
-	var racePoints int
+	racePoints := 0
 
 	fmt.Sscanf(racePointsString, "%d", &racePoints)
+
 	if racePoints == 0 {
 		panic(fmt.Sprintf("unable to parse points string %s for race %s", racePointsString, filename))
 	}
