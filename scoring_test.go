@@ -60,10 +60,15 @@ func TestLoadRace(t *testing.T) {
 		t.Error("strat points are wrong")
 	}
 
-	//check the USA only resuts
+	//check the USA only results
 	overallUSA := getCategory("M", false, 0)
 
 	winnahUSA := overallUSA.sortedAthletes[0]
+
+	/*for a := 0; a < 50; a++ {
+		ath := overallUSA.sortedAthletes[a]
+		fmt.Printf("%d %s %f\n", a, ath.name, ath.points)
+	}*/
 
 	if winnahUSA.points != 350.0 {
 		t.Error("wrong winner points")
@@ -87,6 +92,11 @@ func TestLoadRace(t *testing.T) {
 	overall := getCategory("M", true, 0)
 
 	winnahOverall := overall.sortedAthletes[0]
+
+	/*for a := 0; a < 50; a++ {
+		ath := overall.sortedAthletes[a]
+		fmt.Printf("%d %s %f\n", a, ath.name, ath.points)
+	}*/
 
 	if winnahOverall.points != 350.0 {
 		t.Error("wrong winner points")

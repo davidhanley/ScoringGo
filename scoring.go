@@ -148,13 +148,13 @@ func loadARace(filename string) *Race {
 	raceDate, _ := time.Parse(layoutISO, raceDateStr)
 
 	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
-		y, m, d := raceDate.Date()
-		println(raceDateStr, y, m, d)
-		println("skipping ", filename, raceName)
+		//y, m, d := raceDate.Date()
+		//println(raceDateStr, y, m, d)
+		//println("skipping ", filename, raceName)
 		return nil
 	}
 
-	println("Loading ", filename)
+	//println("Loading ", filename)
 
 	popper()
 
@@ -278,10 +278,10 @@ func scanFiles() {
 	for _, file := range files {
 		race := loadARace(file)
 		if race != nil {
-			fmt.Printf("race: %v\n", race.name)
-			fmt.Printf("date: %v\n", race.date)
-			fmt.Printf("points: %d\n", race.points)
-			fmt.Printf("athlete count: %v\n", len(race.athletes))
+			//fmt.Printf("race: %v\n", race.name)
+			//fmt.Printf("date: %v\n", race.date)
+			//fmt.Printf("points: %d\n", race.points)
+			//fmt.Printf("athlete count: %v\n", len(race.athletes))
 
 			aCount += len(race.athletes)
 		}
@@ -300,7 +300,7 @@ func min(i int, j int) int {
 var categoryMap = make(map[string]*CategoryResult)
 
 func categoryKey(gender string, foreign bool, agecat int) string {
-	return fmt.Sprintf("%s%v%d", gender, foreign, agecat)
+	return fmt.Sprintf("%s%t%d", gender, foreign, agecat)
 }
 
 func getCategory(gender string, foreign bool, agecat int) *CategoryResult {
