@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"net/http"
+
 	//"encoding/csv"
 	"fmt"
 	"io"
@@ -350,13 +352,32 @@ func computeCategories() {
 	}
 }
 
-/*func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
-}*/
+func handler(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	sex := q["sex"]
+	fmt.Printf("fooping %s\n", sex)
+	for i, k := range sex {
+		fmt.Printf("k,v: %d,%s\n", i, k)
+	}
+
+	foreign,_ := strconv.ParseBool(q["foreign"][0])
+	ac,_ := strconv.ParseInt(q["ac"][0], 10, 32)
+
+	c := getCategory(sex[0], foreign, int(ac))
+
+	if c != nil {
+		fmt.Printf("GROOVY!")
+		fmt.Fprintf(w, "champ:%s",c.sortedAthletes[0].name)
+	} else {
+		fmt.Fprintf(w, "bad args")
+	}
+}
+
+//http://127.0.0.1:8080/scoring?sex=M&foreign=true&ac=3
 
 func main() {
 	scanFiles()
 	computeCategories()
-	//http.HandleFunc("/", handler)
-	//log.Fatal(http.ListenAndServe(":8080", nil))
+	http.HandleFunc("/scoring", handler)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
