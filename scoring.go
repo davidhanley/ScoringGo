@@ -4,15 +4,15 @@ import (
 	"bufio"
 	//"encoding/csv"
 	"fmt"
+	"io"
 	"log"
 	"strings"
-	"io"
 	//"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"time"
-	"sort"
 )
 
 type AthleteRaceResult struct {
@@ -65,8 +65,6 @@ func newAthleteID() int {
 	athleteCount = athleteCount + 1
 	return athleteCount
 }
-
-
 
 //taking a name an an age, return an athlete ID
 func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
@@ -137,6 +135,7 @@ func loadARace(filename string) *Race {
 	defer csvfile.Close()
 
 	reader := bufio.NewReader(csvfile)
+
 	popper := func() string {
 		line, _ := reader.ReadString('\n')
 		return strings.TrimSpace(line)
@@ -197,10 +196,10 @@ func loadARace(filename string) *Race {
 
 	race := &Race{raceName, racePoints, raceDate, athletes}
 
+	races = append(races, race)
+
 	return race
 }
-
-
 
 func scoreGender(race *Race, gender string, include_foreign bool, result *CategoryResult) {
 	startFraction := 5
@@ -283,12 +282,22 @@ func scanFiles() {
 			fmt.Printf("date: %v\n", race.date)
 			fmt.Printf("points: %d\n", race.points)
 			fmt.Printf("athlete count: %v\n", len(race.athletes))
-			races = append(races, race)
+
 			aCount += len(race.athletes)
 		}
 	}
 	//fmt.Printf("%d races and %d athletes", len(races), athleteCount)
 }
+
+func min(i int, j int) int {
+	if i < j {
+		return i
+	} else {
+		return j
+	}
+}
+
+var categoryMap = make(map[string]*CategoryResult)
 
 func computeCategories() {
 	genders := []string{"F", "M"}
@@ -297,7 +306,8 @@ func computeCategories() {
 
 	for _, gender := range genders {
 		for _, foreign := range tf {
-			for _, ar := range ageRanges {
+			for ai, ar := range ageRanges {
+
 				resultmap := make(map[string][]*AthleteRaceResult, 0)
 				sorted := make([]Athlete, 0)
 
@@ -310,16 +320,22 @@ func computeCategories() {
 					sortedAthletes:  sorted,
 				}
 				computeCategory(cr)
-				println("---------------------------------")
-				fmt.Printf("gender: %s\n", gender)
-				fmt.Printf("age range: %d %d\n", ar[0], ar[1])
-				fmt.Printf("Foreign: %t\n", foreign)
-				fmt.Printf("count: %d\n", len(cr.results))
-				for a := 0; a < 5; a++ {
+
+				key := fmt.Sprintf("%s%v%d", gender, foreign, ai)
+				fmt.Printf("Cagegory key is:%s", key)
+				categoryMap[key] = cr
+
+				//println("---------------------------------")
+				//fmt.Printf("gender: %s\n", gender)
+				//fmt.Printf("age range: %d %d\n", ar[0], ar[1])
+				//fmt.Printf("Foreign: %t\n", foreign)
+				//fmt.Printf("count: %d\n", len(cr.results))
+				//l := len(cr.sortedAthletes)
+				//ml := min(5, l)
+				/*for a := 0; a < ml; a++ {
 					ath := cr.sortedAthletes[a]
 					fmt.Printf("%s %d %f\n", ath.name, ath.age, ath.points)
-
-				}
+				}*/
 			}
 		}
 	}

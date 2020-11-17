@@ -49,6 +49,8 @@ func TestGetId(t *testing.T) {
 func TestLoadRace(t *testing.T) {
 	race := loadARace("data/2020-scale-the-strat.csv")
 
+	computeCategories()
+
 	if race.name != "2020 Scale The Strat" {
 		t.Error("scale the strat name is wrong")
 	}
@@ -57,33 +59,7 @@ func TestLoadRace(t *testing.T) {
 		t.Error("strat points are wrong")
 	}
 
-	resultmap := make(map[string][]*AthleteRaceResult, 0)
-	sorted := make([]Athlete, 0)
 
-	var cr = &CategoryResult{
-		gender:          "F",
-		age_low:         20,
-		age_high:        50,
-		include_foreign: true,
-		results:         resultmap,
-		sortedAthletes:  sorted,
-	}
-
-	scoreGender(race, "M", true, cr)
-
-	first := race.athletes[0]
-
-	if first.foreign == false {
-		t.Error("the winner was foreign...")
-	}
-
-	if len(cr.sortedAthletes) == 0 {
-		t.Error("didn't add sorted athletes")
-	}
-	if cr.sortedAthletes[0].points != 350.0 {
-		println("actual points : " , cr.sortedAthletes[0].points)
-		t.Error("the winner points are wrong...")
-	}
 
 	/* dave := race.athletes[27]
 
