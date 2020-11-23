@@ -5,52 +5,56 @@ import (
 )
 
 func TestGetId(t *testing.T) {
-	if LookupAthlete("david hanley", 47, "M", false).id != 1 {
+	db := makeAthleteDB()
+
+	if LookupAthlete("david hanley", 47, "M", false,db).id != 1 {
 		t.Error("first ID not one")
 	}
 
-	if LookupAthlete("david hanley", 47, "M", false).id != 1 {
+	if LookupAthlete("david hanley", 47, "M", false,db).id != 1 {
 		t.Error("should be same dave")
 	}
 
-	if LookupAthlete("david hanley", 48, "M", false).id != 1 {
+	if LookupAthlete("david hanley", 48, "M", false,db).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if LookupAthlete("david hanley", 46, "M", false).id != 1 {
+	if LookupAthlete("david hanley", 46, "M", false,db).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if LookupAthlete("david hanley", 0, "M", false).id != 1 {
+	if LookupAthlete("david hanley", 0, "M", false,db).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if LookupAthlete("david hanley", 25, "M", false).id != 2 {
+	if LookupAthlete("david hanley", 25, "M", false,db).id != 2 {
 		t.Error("should be a new dave now")
 	}
 
-	if LookupAthlete("david hanley", 25, "M", false).id != 2 {
+	if LookupAthlete("david hanley", 25, "M", false,db).id != 2 {
 		t.Error("but still that same one")
 	}
 
-	if LookupAthlete("erin brand", 0, "F", false).id != 3 {
+	if LookupAthlete("erin brand", 0, "F", false,db).id != 3 {
 		t.Error("young erin should be 3")
 	}
 
-	if LookupAthlete("erin brand", 50, "F", false).id != 3 {
+	if LookupAthlete("erin brand", 50, "F", false,db).id != 3 {
 		t.Error("in-her-prime erin should be 3")
 	}
 
-	if athleteDb["ERIN BRAND"][0].age != 50 {
+	if db.db["ERIN BRAND"][0].age != 50 {
 		t.Error("erin should be updated")
 	}
 }
 
 func TestLoadRace(t *testing.T) {
 
+	db := makeAthleteDB()
+
 	races := make([]*Race, 0)
 
-	races = loadARace("data/2020-scale-the-strat.csv", races)
+	races = loadARace("data/2020-scale-the-strat.csv", races, db)
 
 	computeCategories(races)
 

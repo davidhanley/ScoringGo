@@ -52,10 +52,15 @@ type CategoryResult struct {
 	sortedAthletes []AthleteRank
 }
 
-var athleteDb = make(map[string][]*Athlete)
-var athleteCount = 0
+type AthleteDB struct {
+  db  map[string][]*Athlete
+  athleteCount int
+}
 
-//var races = make([]*Race, 0)
+func makeAthleteDB() *AthleteDB {
+	return &AthleteDB{ make(map[string][]*Athlete),0 }
+}
+
 
 // Abs returns the absolute value of x.
 func abs(x int) int {
@@ -65,24 +70,24 @@ func abs(x int) int {
 	return x
 }
 
-func newAthleteID() int {
-	athleteCount = athleteCount + 1
-	return athleteCount
+func newAthleteID(athleteDB *AthleteDB) int {
+	athleteDB.athleteCount = athleteDB.athleteCount + 1
+	return athleteDB.athleteCount
 }
 
 //taking a name an an age, return an athlete ID
-func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
+func LookupAthlete(name string, age int, sex string, foreign bool,db *AthleteDB) *Athlete {
 	name = strings.ToUpper(name)
 	name = strings.TrimSpace(name)
 
-	athleteList := athleteDb[name]
+	athleteList := db.db[name]
 
-	newAth := func() *Athlete { return &Athlete{newAthleteID(), name, age, sex, foreign} }
+	newAth := func() *Athlete { return &Athlete{newAthleteID(db), name, age, sex, foreign} }
 
 	if len(athleteList) == 0 {
 		na := newAth()
 		athleteList = append(athleteList, na)
-		athleteDb[name] = athleteList
+		db.db[name] = athleteList
 		return na
 	} else {
 		if age == 0 {
@@ -99,14 +104,14 @@ func LookupAthlete(name string, age int, sex string, foreign bool) *Athlete {
 		}
 		na := newAth()
 		athleteList = append(athleteList, na)
-		athleteDb[name] = athleteList
+		db.db[name] = athleteList
 		return na
 	}
 }
 
 //turn a CSV line into an athlete
 //intended to return null if there is no gender
-func athleteFromLine(line []string) *Athlete {
+func athleteFromLine(line []string, db *AthleteDB) *Athlete {
 	var athlete *Athlete
 	if len(line) >= 4 {
 		name := line[1]
@@ -124,14 +129,14 @@ func athleteFromLine(line []string) *Athlete {
 		if len(sex) > 0 {
 			sex = strings.ToUpper(sex)[:1]
 			if sex == "F" || sex == "M" {
-				athlete = LookupAthlete(name, age, sex, foreign)
+				athlete = LookupAthlete(name, age, sex, foreign, db)
 			}
 		}
 	}
 	return athlete
 }
 
-func loadARace(filename string, races []*Race) []*Race {
+func loadARace(filename string, races []*Race, db *AthleteDB) []*Race {
 	csvfile, err := os.Open(filename)
 	if err != nil {
 		log.Fatalln("Couldn't open the csv file", err)
@@ -192,7 +197,7 @@ func loadARace(filename string, races []*Race) []*Race {
 			log.Fatal(err)
 		}
 
-		athlete := athleteFromLine(record)
+		athlete := athleteFromLine(record,db )
 
 		if athlete != nil {
 			athletes = append(athletes, athlete)
@@ -264,7 +269,7 @@ func computeCategory(cr *CategoryResult, races []*Race) {
 	computeOverallForCategory(cr)
 }
 
-func scanFiles() []*Race {
+func scanFiles(db *AthleteDB) []*Race {
 	var files []string
 
 	root := "data/"
@@ -283,7 +288,7 @@ func scanFiles() []*Race {
 	races := make([]*Race, 0)
 
 	for _, file := range files {
-		races = loadARace(file, races)
+		races = loadARace(file, races, db)
 	}
 	//fmt.Printf("%d races and %d athletes", len(races), athleteCount)
 	return races
@@ -354,7 +359,8 @@ func computeCategories(races []*Race) {
 }*/
 
 func main() {
-	races := scanFiles()
+	db := makeAthleteDB()
+	races := scanFiles(db)
 	computeCategories(races)
 	//http.HandleFunc("/", handler)
 	//log.Fatal(http.ListenAndServe(":8080", nil))
