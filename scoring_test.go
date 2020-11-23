@@ -47,10 +47,14 @@ func TestGetId(t *testing.T) {
 }
 
 func TestLoadRace(t *testing.T) {
-	race := loadARace("data/2020-scale-the-strat.csv")
 
-	computeCategories()
+	races := make([]*Race, 0)
 
+	races = loadARace("data/2020-scale-the-strat.csv", races)
+
+	computeCategories(races)
+
+	race := races[0]
 	if race.name != "2020 Scale The Strat" {
 		t.Error("scale the strat name is wrong")
 	}

@@ -48,15 +48,14 @@ type CategoryResult struct {
 	ageLow         int
 	ageHigh        int
 	includeForeign bool
-
-	results map[string][]*AthleteRaceResult
-
+	results        map[string][]*AthleteRaceResult
 	sortedAthletes []AthleteRank
 }
 
 var athleteDb = make(map[string][]*Athlete)
 var athleteCount = 0
-var races = make([]*Race, 0)
+
+//var races = make([]*Race, 0)
 
 // Abs returns the absolute value of x.
 func abs(x int) int {
@@ -132,7 +131,7 @@ func athleteFromLine(line []string) *Athlete {
 	return athlete
 }
 
-func loadARace(filename string) *Race {
+func loadARace(filename string, races []*Race) []*Race {
 	csvfile, err := os.Open(filename)
 	if err != nil {
 		log.Fatalln("Couldn't open the csv file", err)
@@ -204,7 +203,7 @@ func loadARace(filename string) *Race {
 
 	races = append(races, race)
 
-	return race
+	return races
 }
 
 func scoreGender(race *Race, gender string, include_foreign bool, result *CategoryResult) {
@@ -258,14 +257,14 @@ func computeOverallForCategory(category *CategoryResult) {
 	category.sortedAthletes = aresults
 }
 
-func computeCategory(cr *CategoryResult) {
+func computeCategory(cr *CategoryResult, races []*Race) {
 	for _, race := range races {
 		scoreGender(race, cr.gender, cr.includeForeign, cr)
 	}
 	computeOverallForCategory(cr)
 }
 
-func scanFiles() {
+func scanFiles() []*Race {
 	var files []string
 
 	root := "data/"
@@ -281,19 +280,13 @@ func scanFiles() {
 		panic(err)
 	}
 
-	aCount := 0
-	for _, file := range files {
-		race := loadARace(file)
-		if race != nil {
-			//fmt.Printf("race: %v\n", race.name)
-			//fmt.Printf("date: %v\n", race.date)
-			//fmt.Printf("points: %d\n", race.points)
-			//fmt.Printf("athlete count: %v\n", len(race.athletes))
+	races := make([]*Race, 0)
 
-			aCount += len(race.athletes)
-		}
+	for _, file := range files {
+		races = loadARace(file, races)
 	}
 	//fmt.Printf("%d races and %d athletes", len(races), athleteCount)
+	return races
 }
 
 func min(i int, j int) int {
@@ -314,7 +307,7 @@ func getCategory(gender string, foreign bool, agecat int) *CategoryResult {
 	return categoryMap[categoryKey(gender, foreign, agecat)]
 }
 
-func computeCategories() {
+func computeCategories(races []*Race) {
 	genders := []string{"F", "M"}
 	tf := []bool{true, false}
 	ageRanges := [][]int{{0, 200}, {0, 9}, {10, 19}, {20, 29}, {30, 39}, {40, 49}, {50, 59}, {60, 69}, {70, 79}, {80, 200}}
@@ -334,7 +327,7 @@ func computeCategories() {
 					results:        resultmap,
 					sortedAthletes: sorted,
 				}
-				computeCategory(cr)
+				computeCategory(cr, races)
 
 				key := categoryKey(gender, foreign, ageIndex)
 
@@ -361,8 +354,8 @@ func computeCategories() {
 }*/
 
 func main() {
-	scanFiles()
-	computeCategories()
+	races := scanFiles()
+	computeCategories(races)
 	//http.HandleFunc("/", handler)
 	//log.Fatal(http.ListenAndServe(":8080", nil))
 }
