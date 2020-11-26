@@ -1,13 +1,16 @@
 package main
 
 import (
-	//"encoding/csv"
 	"fmt"
+	"strconv"
+
+	//"strconv"
 	"strings"
-	//"net/http"
+	"net/http"
 	"sort"
 	"time"
 	"sync"
+	"log"
 )
 
 type AthleteRaceResult struct {
@@ -138,44 +141,37 @@ func scoreGender(race *Race, gender string, result *CategoryResult) {
 	}
 }
 
-func computeOverallForCategory(category *CategoryResult) {
-	aresults := make([]AthleteAndPoints, 0)
+func computeRankForCategory(category *CategoryResult) {
+	athletesAndPoints := make([]AthleteAndPoints, 0)
 	//first, compute the top five for each athlete
 	for _, results := range category.results {
 		sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
 		points := float32(0.0)
 		for i, r := range results {
-			if i < 5 {
-				points = points + r.points
+			if i >= 5 {
+				break
 			}
+			points = points + r.points
 		}
-		ath := results[0].ath
-		ath.points = points
-		aresults = append(aresults, ath)
+		athlete := results[0].ath
+		athlete.points = points
+		athletesAndPoints = append(athletesAndPoints, athlete)
 	}
 	//next, sort the category by top five results per athlete
-	sort.Slice(aresults, func(i, j int) bool {
-		return aresults[i].points > aresults[j].points
+	sort.Slice(athletesAndPoints, func(i, j int) bool {
+		return athletesAndPoints[i].points > athletesAndPoints[j].points
 	})
 
-	category.sortedAthletes = aresults
+	category.sortedAthletes = athletesAndPoints
 }
 
-func computeCategory(wg *sync.WaitGroup, cr *CategoryResult, races []*Race) {
-	defer wg.Done()
+func computeCategory(waitGroup *sync.WaitGroup, cr *CategoryResult, races []*Race) {
+	defer waitGroup.Done()
 
 	for _, race := range races {
 		scoreGender(race, cr.gender, cr)
 	}
-	computeOverallForCategory(cr)
-}
-
-func min(i int, j int) int {
-	if i < j {
-		return i
-	} else {
-		return j
-	}
+	computeRankForCategory(cr)
 }
 
 var categoryMap = make(map[string]*CategoryResult)
@@ -215,7 +211,7 @@ func filterRacesForForeignicity(races []*Race, foreignicity Foreignicity) {
 }
 
 func computeCategories(races []*Race) {
-	var wg sync.WaitGroup
+	var waitGroup sync.WaitGroup
 
 	genders := []string{"F", "M"}
 	tf := []Foreignicity{ALL, THREE_RACE_FOREIGNERS, US_ONLY}
@@ -227,36 +223,52 @@ func computeCategories(races []*Race) {
 		for _, gender := range genders {
 			for ageIndex, ar := range ageRanges {
 
-				resultmap := make(map[string][]*AthleteRaceResult, 0)
+				resultMap := make(map[string][]*AthleteRaceResult, 0)
 				sorted := make([]AthleteAndPoints, 0)
 
-				var cr = &CategoryResult{
+				var categoryResult = &CategoryResult{
 					gender:         gender,
 					ageLow:         ar[0],
 					ageHigh:        ar[1],
 					includeForeign: foreign,
-					results:        resultmap,
+					results:        resultMap,
 					sortedAthletes: sorted,
 				}
-			    go computeCategory(&wg, cr, races)
-				wg.Add(1)
+				//because this has no side-effect other than modifying categoryResult,
+				//we can run it as its own goroutine..  We just need to wait until we serve results..
+				go computeCategory(&waitGroup, categoryResult, races)
+				waitGroup.Add(1)
 
 				key := categoryKey(gender, foreign, ageIndex)
-				categoryMap[key] = cr
+				categoryMap[key] = categoryResult
 			}
 		}
 	}
-	wg.Wait()
+	waitGroup.Wait()
 }
 
-/*func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
-}*/
+func handler(w http.ResponseWriter, r *http.Request) {
+	header := r.URL.Query()
+	for k,v := range header {
+		fmt.Fprintf(w,"%s %s\n",k,v[0])
+	}
+	g := header["g"][0]
+	f, _ := strconv.Atoi(header["f"][0])
+	a, _ := strconv.Atoi(header["a"][0])
+	category := getCategory(g, Foreignicity(f), a)
+	if category != nil {
+		for i, athlete := range category.sortedAthletes {
+			fmt.Fprintf(w, "%d,%s,%f\n", i, athlete.athlete.name, athlete.points)
+		}
+	} else {
+		fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+	}
+}
 
 func main() {
 	db := makeAthleteDB()
 	races := scanFiles(db)
 	computeCategories(races)
-	//http.HandleFunc("/", handler)
-	//log.Fatal(http.ListenAndServe(":8080", nil))
+	http.HandleFunc("/", handler)
+	log.Fatal(http.ListenAndServe(":666", nil))
 }
