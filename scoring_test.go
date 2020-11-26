@@ -2,44 +2,45 @@ package main
 
 import (
 	"testing"
+	"time"
 )
 
 func TestGetId(t *testing.T) {
 	db := makeAthleteDB()
 
-	if LookupAthlete("david hanley", 47, "M", false,db).id != 1 {
+	if LookupAthlete("david hanley", 47, "M", false, db).id != 1 {
 		t.Error("first ID not one")
 	}
 
-	if LookupAthlete("david hanley", 47, "M", false,db).id != 1 {
+	if LookupAthlete("david hanley", 47, "M", false, db).id != 1 {
 		t.Error("should be same dave")
 	}
 
-	if LookupAthlete("david hanley", 48, "M", false,db).id != 1 {
+	if LookupAthlete("david hanley", 48, "M", false, db).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if LookupAthlete("david hanley", 46, "M", false,db).id != 1 {
+	if LookupAthlete("david hanley", 46, "M", false, db).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if LookupAthlete("david hanley", 0, "M", false,db).id != 1 {
+	if LookupAthlete("david hanley", 0, "M", false, db).id != 1 {
 		t.Error("should still be same dave")
 	}
 
-	if LookupAthlete("david hanley", 25, "M", false,db).id != 2 {
+	if LookupAthlete("david hanley", 25, "M", false, db).id != 2 {
 		t.Error("should be a new dave now")
 	}
 
-	if LookupAthlete("david hanley", 25, "M", false,db).id != 2 {
+	if LookupAthlete("david hanley", 25, "M", false, db).id != 2 {
 		t.Error("but still that same one")
 	}
 
-	if LookupAthlete("erin brand", 0, "F", false,db).id != 3 {
+	if LookupAthlete("erin brand", 0, "F", false, db).id != 3 {
 		t.Error("young erin should be 3")
 	}
 
-	if LookupAthlete("erin brand", 50, "F", false,db).id != 3 {
+	if LookupAthlete("erin brand", 50, "F", false, db).id != 3 {
 		t.Error("in-her-prime erin should be 3")
 	}
 
@@ -48,11 +49,39 @@ func TestGetId(t *testing.T) {
 	}
 }
 
+func TestFilterForeign(t *testing.T) {
+
+	a1 := &Athlete{0, "dave", 48, "M", false, 5}
+	a2 := &Athlete{1, "robero", 48, "M", true, 5}
+	a3 := &Athlete{1, "gustavo", 28, "M", true, 2}
+
+	athletes := []*Athlete{a1, a2, a3}
+
+	race := &Race{"STS", 200, time.Now(), athletes}
+
+	//filter out the foreign athletes with fewer than 3 races 
+	filterRaceForForeignicity(race, THREE_RACE_FOREIGNERS)
+	if len(race.athletes) != 2 {
+		t.Error("Three race foreign filter size != 2")
+	}
+
+	//dual filter doesn't change things 
+	filterRaceForForeignicity(race, THREE_RACE_FOREIGNERS)
+	if len(race.athletes) != 2 {
+		t.Error("Three race foreign filter size != 2")
+	}
+
+	//filter out all foreign athletes 
+	filterRaceForForeignicity(race, US_ONLY)
+	if len(race.athletes) != 1 {
+		t.Error("US onlyfilter size !=1")
+	}
+}
 
 func TestLoadRace(t *testing.T) {
 	db := makeAthleteDB()
 
-    races := make([]*Race, 0)
+	races := make([]*Race, 0)
 
 	races = loadARace("data/2020-scale-the-strat.csv", races, db)
 
@@ -69,7 +98,7 @@ func TestLoadRace(t *testing.T) {
 	}
 
 	//check the USA only results
-	overallUSA := getCategory("M", false, 0)
+	overallUSA := getCategory("M", US_ONLY, 0)
 
 	winnahUSA := overallUSA.sortedAthletes[0]
 
@@ -97,7 +126,7 @@ func TestLoadRace(t *testing.T) {
 
 	//now check foreign
 
-	overall := getCategory("M", true, 0)
+	overall := getCategory("M", ALL, 0)
 
 	winnahOverall := overall.sortedAthletes[0]
 
