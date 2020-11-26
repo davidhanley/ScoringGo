@@ -16,7 +16,7 @@ import (
 )
 
 type AthleteRaceResult struct {
-	ath    AthleteRank
+	ath    AthleteAndPoints
 	race   *Race
 	points float32
 	rank   int
@@ -28,10 +28,9 @@ type Athlete struct {
 	age     int
 	sex     string
 	foreign bool
-	//points  float32
 }
 
-type AthleteRank struct {
+type AthleteAndPoints struct {
 	athlete *Athlete
 	points  float32
 }
@@ -49,7 +48,7 @@ type CategoryResult struct {
 	ageHigh        int
 	includeForeign bool
 	results        map[string][]*AthleteRaceResult
-	sortedAthletes []AthleteRank
+	sortedAthletes []AthleteAndPoints
 }
 
 type AthleteDB struct {
@@ -60,7 +59,6 @@ type AthleteDB struct {
 func makeAthleteDB() *AthleteDB {
 	return &AthleteDB{ make(map[string][]*Athlete),0 }
 }
-
 
 // Abs returns the absolute value of x.
 func abs(x int) int {
@@ -136,7 +134,9 @@ func athleteFromLine(line []string, db *AthleteDB) *Athlete {
 	return athlete
 }
 
-func loadARace(filename string, races []*Race, db *AthleteDB) []*Race {
+func loadARace(filename string, races []*Race, db *AthleteDB) []* Race{
+	fmt.Printf("LAR: %s\n",filename)
+
 	csvfile, err := os.Open(filename)
 	if err != nil {
 		log.Fatalln("Couldn't open the csv file", err)
@@ -157,13 +157,13 @@ func loadARace(filename string, races []*Race, db *AthleteDB) []*Race {
 	raceDate, _ := time.Parse(layoutISO, raceDateStr)
 
 	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
-		//y, m, d := raceDate.Date()
-		//println(raceDateStr, y, m, d)
-		//println("skipping ", filename, raceName)
-		return nil
+		y, m, d := raceDate.Date()
+		println(raceDateStr, y, m, d)
+		println("skipping ", filename, raceName)
+		return races
 	}
 
-	//println("Loading ", filename)
+	println("Loading ", filename)
 
 	popper()
 
@@ -183,18 +183,13 @@ func loadARace(filename string, races []*Race, db *AthleteDB) []*Race {
 
 	for {
 		line, err := reader.ReadString('\n')
-
 		if err == io.EOF {
 			break
 		}
+
 		record := strings.Split(line, ",")
 		for i := 0; i < len(record); i++ {
 			record[i] = strings.TrimSpace(record[i])
-		}
-
-		if err != nil {
-			println("err!")
-			log.Fatal(err)
 		}
 
 		athlete := athleteFromLine(record,db )
@@ -203,6 +198,8 @@ func loadARace(filename string, races []*Race, db *AthleteDB) []*Race {
 			athletes = append(athletes, athlete)
 		}
 	}
+
+	fmt.Printf("Loaded %d athletes\n",len(athletes))
 
 	race := &Race{raceName, racePoints, raceDate, athletes}
 
@@ -222,7 +219,7 @@ func scoreGender(race *Race, gender string, include_foreign bool, result *Catego
 			(athlete.foreign == false || include_foreign) &&
 			(athlete.age >= result.ageLow && athlete.age <= result.ageHigh) {
 			points := basePoints / float64(denom)
-			athleteRank := AthleteRank{&athlete, 0.0}
+			athleteRank := AthleteAndPoints{&athlete, 0.0}
 			rr := AthleteRaceResult{athleteRank, race, float32(points), denom - 4}
 			athletesRaces := result.results
 			if athletesRaces == nil {
@@ -240,7 +237,7 @@ func scoreGender(race *Race, gender string, include_foreign bool, result *Catego
 }
 
 func computeOverallForCategory(category *CategoryResult) {
-	aresults := make([]AthleteRank, 0)
+	aresults := make([]AthleteAndPoints, 0)
 	//first, compute the top five for each athlete
 	for _, results := range category.results {
 		sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
@@ -290,7 +287,7 @@ func scanFiles(db *AthleteDB) []*Race {
 	for _, file := range files {
 		races = loadARace(file, races, db)
 	}
-	//fmt.Printf("%d races and %d athletes", len(races), athleteCount)
+
 	return races
 }
 
@@ -322,7 +319,7 @@ func computeCategories(races []*Race) {
 			for ageIndex, ar := range ageRanges {
 
 				resultmap := make(map[string][]*AthleteRaceResult, 0)
-				sorted := make([]AthleteRank, 0)
+				sorted := make([]AthleteAndPoints, 0)
 
 				var cr = &CategoryResult{
 					gender:         gender,
@@ -338,17 +335,18 @@ func computeCategories(races []*Race) {
 
 				categoryMap[key] = cr
 
-				//println("---------------------------------")
-				//fmt.Printf("gender: %s\n", gender)
-				//fmt.Printf("age range: %d %d\n", ar[0], ar[1])
-				//fmt.Printf("Foreign: %t\n", foreign)
-				//fmt.Printf("count: %d\n", len(cr.results))
-				//l := len(cr.sortedAthletes)
-				//ml := min(5, l)
-				/*for a := 0; a < ml; a++ {
+				println("---------------------------------")
+				fmt.Printf("gender: %s\n", gender)
+				fmt.Printf("age range: %d %d\n", ar[0], ar[1])
+				fmt.Printf("Foreign: %t\n", foreign)
+				fmt.Printf("count: %d\n", len(cr.results))
+				l := len(cr.sortedAthletes)
+				ml := min(5, l)
+				for a := 0; a < ml; a++ {
 					ath := cr.sortedAthletes[a]
-					fmt.Printf("%s %d %f\n", ath.name, ath.age, ath.points)
-				}*/
+					athlete := ath.athlete
+					fmt.Printf("%s %d %f\n", athlete.name, athlete.age, ath.points)
+				}
 			}
 		}
 	}
