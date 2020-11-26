@@ -258,7 +258,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	category := getCategory(g, Foreignicity(f), a)
 	if category != nil {
 		for i, athlete := range category.sortedAthletes {
-			fmt.Fprintf(w, "%d,%s,%f\n", i, athlete.athlete.name, athlete.points)
+			fmt.Fprintf(w, "%d,%s %d,%f\n", i, athlete.athlete.name, athlete.athlete.age,athlete.points)
 		}
 	} else {
 		fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
