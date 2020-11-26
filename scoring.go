@@ -200,7 +200,7 @@ func filterRaceForForeignicity(race *Race, foreignicity Foreignicity) {
 		}
 		athletes = append(athletes, athlete)
 	}
-	fmt.Printf("Filtered %d athletes to %d with %d\n", len(race.athletes), len(athletes), foreignicity)
+	//fmt.Printf("Filtered %s %d athletes to %d with %d\n", race.name, len(race.athletes), len(athletes), foreignicity)
 	race.athletes = athletes
 }
 
@@ -240,22 +240,9 @@ func computeCategories(races []*Race) {
 				}
 			    go computeCategory(&wg, cr, races)
 				wg.Add(1)
-				
+
 				key := categoryKey(gender, foreign, ageIndex)
 				categoryMap[key] = cr
-
-				/*println("---------------------------------")
-				fmt.Printf("gender: %s\n", gender)
-				fmt.Printf("age range: %d %d\n", ar[0], ar[1])
-				fmt.Printf("Foreign: %t\n", foreign)
-				fmt.Printf("count: %d\n", len(cr.results))
-				l := len(cr.sortedAthletes)
-				ml := min(5, l)
-				for a := 0; a < ml; a++ {
-					ath := cr.sortedAthletes[a]
-					athlete := ath.athlete
-					fmt.Printf("%s %d %f\n", athlete.name, athlete.age, ath.points)
-				}*/
 			}
 		}
 	}
