@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -83,7 +84,8 @@ func TestLoadRace(t *testing.T) {
 
 	races := make([]*Race, 0)
 
-	races = loadARace("data/2020-scale-the-strat.csv", races, db)
+	raceDate, _ := time.Parse(layoutISO, "2020-04-01")
+	races = loadARace("data/2020-scale-the-strat.csv", races, db, raceDate)
 
 	computeCategories(races)
 
@@ -102,16 +104,16 @@ func TestLoadRace(t *testing.T) {
 
 	winnahUSA := overallUSA.sortedAthletes[0]
 
-	/*for a := 0; a < 50; a++ {
-		ath := overallUSA.sortedAthletes[a]
-		fmt.Printf("%d %s %f\n", a, ath.name, ath.points)
-	}*/
+	for a := 0; a < 50; a++ {
+		ath := overallUSA.sortedAthletes[a].athlete
+		fmt.Printf("%d %s %d\n", a,ath.name,ath.age)
+	}
 
 	if winnahUSA.points != 350.0 {
 		t.Error("wrong winner points")
 	}
 
-	/*dave := overallUSA.sortedAthletes[20]
+	dave := overallUSA.sortedAthletes[20]
 	if dave.athlete.name != "DAVID HANLEY" {
 		t.Error("strat 20 isn't dave")
 	}
@@ -120,9 +122,13 @@ func TestLoadRace(t *testing.T) {
 		t.Error("Dave isn't foreign")
 	}
 
+	if dave.athlete.age != 47 {
+		t.Error(fmt.Sprintf("Dave age is wrong %d", dave.athlete.age))
+	}
+
 	if dave.points != 70.0 {
 		t.Error(fmt.Sprintf("Dave points are wrong (%f)", dave.points))
-	}*/
+	}
 
 	//now check foreign
 

@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strconv"
 
-	//"strconv"
-	"strings"
+	"html/template"
+	"log"
 	"net/http"
 	"sort"
-	"time"
+	//"strconv"
+	"strings"
 	"sync"
-	"log"
+	"time"
 )
 
 type AthleteRaceResult struct {
@@ -44,7 +45,7 @@ type Race struct {
 type Foreignicity int
 
 const (
-	ALL Foreignicity = iota
+	ALL Foreignicity = iota //starts with zero
 	THREE_RACE_FOREIGNERS
 	US_ONLY
 )
@@ -247,25 +248,41 @@ func computeCategories(races []*Race) {
 	waitGroup.Wait()
 }
 
+type TableRow struct {
+	Rank   int
+	Name   string
+	Age    int
+	Points float32
+}
+
+var templ *template.Template
+
 func handler(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Fprintf(w, "invalid query")
+		}
+	}()
 	header := r.URL.Query()
-	for k,v := range header {
-		fmt.Fprintf(w,"%s %s\n",k,v[0])
-	}
 	g := header["g"][0]
 	f, _ := strconv.Atoi(header["f"][0])
 	a, _ := strconv.Atoi(header["a"][0])
 	category := getCategory(g, Foreignicity(f), a)
 	if category != nil {
+		results := make([]*TableRow, 0)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		for i, athlete := range category.sortedAthletes {
-			fmt.Fprintf(w, "%d,%s %d,%f\n", i, athlete.athlete.name, athlete.athlete.age,athlete.points)
+			r := &TableRow{i, athlete.athlete.name, athlete.athlete.age, athlete.points}
+			results = append(results, r)
 		}
+		templ.ExecuteTemplate(w, "raceTable.html", results)
 	} else {
 		fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
 	}
 }
 
 func main() {
+	templ, _ = templ.ParseGlob("raceTable.html")
 	db := makeAthleteDB()
 	races := scanFiles(db)
 	computeCategories(races)

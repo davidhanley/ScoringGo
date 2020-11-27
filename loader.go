@@ -41,8 +41,9 @@ func athleteFromLine(line []string, db *AthleteDB) *Athlete {
 	return athlete
 }
 
+var layoutISO = "2006-1-2"
 
-func loadARace(filename string, races []*Race, db *AthleteDB) []* Race{
+func loadARace(filename string, races []*Race, db *AthleteDB, now time.Time) []* Race{
 	//fmt.Printf("LAR: %s\n",filename)
 
 	csvfile, err := os.Open(filename)
@@ -59,12 +60,11 @@ func loadARace(filename string, races []*Race, db *AthleteDB) []* Race{
 	}
 
 	raceName := popper()
-	layoutISO := "2006-1-2"
 	raceDateStr := popper()
 	raceDateStr = strings.Split(raceDateStr, ",")[0]
 	raceDate, _ := time.Parse(layoutISO, raceDateStr)
 
-	if raceDate.AddDate(1, 0, 0).Before(time.Now()) {
+	if raceDate.AddDate(1, 0, 0).Before(now) || raceDate.After(now){
 		//y, m, d := raceDate.Date()
 		//println(raceDateStr, y, m, d)
 		//println("skipping ", filename, raceName)
@@ -136,7 +136,7 @@ func scanFiles(db *AthleteDB) []*Race {
 	races := make([]*Race, 0)
 
 	for _, file := range files {
-		races = loadARace(file, races, db)
+		races = loadARace(file, races, db, time.Now())
 	}
 
 	return races

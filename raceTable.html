@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Race Scoring</title>
+
+
+
+
+</head>
+<body>
+
+<table>
+    <!-- Table header -->
+    <thead>
+    <tr>
+        <th scope="col">Rank</th>
+        <th scope="col">Name</th>
+        <th scope="col">Age</th>
+        <th scope="col">Points</th>
+    </tr>
+    </thead>
+
+    <!-- Table footer -->
+
+    <tfoot>
+    <tr>
+        <td>END</td>
+    </tr>
+    </tfoot>
+
+    <!-- Table body -->
+
+    <tbody>
+    {{ range . }}
+        <tr>
+            <td>{{ .Rank }}</td>
+            <td>{{ .Name }}</td>
+            <td>{{ .Age }}</td>
+            <td>{{ .Points }}</td>
+        </tr>
+    {{ end }}
+    </tbody>
+
+</table>
+
+</body>
+</html>
