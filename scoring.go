@@ -253,6 +253,7 @@ type TableRow struct {
 	Name   string
 	Age    int
 	Points float32
+	Races  []string
 }
 
 var templ *template.Template
@@ -269,13 +270,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	a, _ := strconv.Atoi(header["a"][0])
 	category := getCategory(g, Foreignicity(f), a)
 	if category != nil {
-		results := make([]*TableRow, 0)
+		rows := make([]*TableRow, 0)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		for i, athlete := range category.sortedAthletes {
-			r := &TableRow{i, athlete.athlete.name, athlete.athlete.age, athlete.points}
-			results = append(results, r)
+			sa := make([]string, 0)
+			results := category.results[athlete.athlete.name]
+			for _, rr := range results {
+				sa = append(sa, fmt.Sprintf("%s %f", rr.race.name, rr.points))
+			}
+			r := &TableRow{i, athlete.athlete.name, athlete.athlete.age, athlete.points, sa}
+			rows = append(rows, r)
 		}
-		templ.ExecuteTemplate(w, "raceTable.html", results)
+		templ.ExecuteTemplate(w, "raceTable.html", rows)
 	} else {
 		fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
 	}

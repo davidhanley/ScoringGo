@@ -38,6 +38,9 @@
             <td>{{ .Name }}</td>
             <td>{{ .Age }}</td>
             <td>{{ .Points }}</td>
+            {{range .Races}}
+              <td>{{ . }}</td>
+            {{ end }}
         </tr>
     {{ end }}
     </tbody>
