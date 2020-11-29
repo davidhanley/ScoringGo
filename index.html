@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tower running scoring</title>
+    <style>
+        *{margin:0;padding:0}
+        html, body {height:100%;width:100%;overflow:hidden}
+        table {height:100%;width:100%;table-layout:static;border-collapse:collapse}
+        iframe {height:100%;width:100%}
+
+        .header {border-bottom:1px solid #000}
+        .content {height:100%}
+    </style>
+</head>
+<body>
+
+<form id="try" method="get" target="receiver" action="http://localhost:8080/scoring">
+    <div>
+        <label>Sex:</label>
+        <select id="g" name="g">\
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+        </select>
+    </div>
+    <div>
+        <label>Age Range:</label>
+        <select id="a" name="a">\
+            <option value="0">All</option>
+            <option value="1">0-9</option>
+            <option value="2">10-19</option>
+            <option value="3">20-29</option>
+            <option value="4">30-39</option>
+            <option value="5">40-49</option>
+            <option value="6">50-59</option>
+            <option value="7">60-69</option>
+            <option value="8">70-79</option>
+            <option value="9">80-89</option>
+            <option value="10">90-99</option>
+            <option value="11">100+</option>
+        </select>
+    </div>
+    <div>
+        <label>Country:</label>
+        <select id="f" name="f">\
+            <option value="0">All</option>
+            <option value="1">American & foreigners with 3 races</option>
+            <option value="2">USA only</option>
+        </select>
+    </div>
+    <div>
+        <label>Rows:</label>
+        <select id="r" name="r">\
+            <option value="0">20</option>
+            <option value="1">100</option>
+            <option value="2">All</option>
+        </select>
+    </div>
+    <input type="submit" value="submit">
+</form>
+
+
+<table>
+    <tr><td class="header"><div><h1>Results</h1></div></td></tr>
+    <tr><td class="content">
+            <iframe name="receiver" id="receiver"></iframe></td></tr>
+</table>
+</body>
+</html>
