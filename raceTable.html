@@ -5,10 +5,44 @@
     <title>Race Scoring</title>
 
 
-
-
 </head>
 <body>
+
+<form method="GET">
+    <div>
+        <label>Sex:</label>
+        <select id="g" name="g">\
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+        </select>
+    </div>
+    <div>
+        <label>Age Range:</label>
+        <select id="a" name="a">\
+            <option value="0">All</option>
+            <option value="1">0-9</option>
+            <option value="2">10-19</option>
+            <option value="3">20-29</option>
+            <option value="4">30-39</option>
+            <option value="5">40-49</option>
+            <option value="6">50-59</option>
+            <option value="7">60-69</option>
+            <option value="8">70-79</option>
+            <option value="9">80-89</option>
+            <option value="10">90-99</option>
+            <option value="11">100+</option>
+        </select>
+    </div>
+    <div>
+        <label>Country:</label>
+        <select id="f" name="f">\
+            <option value="0">All</option>
+            <option value="1">American & foreigners with 3 races</option>
+            <option value="2">USA only</option>
+        </select>
+    </div>
+    <input type="submit" value="submit">
+</form>
 
 <table>
     <!-- Table header -->
@@ -39,13 +73,12 @@
             <td>{{ .Age }}</td>
             <td>{{ .Points }}</td>
             {{range .Races}}
-              <td>{{ . }}</td>
+                <td>{{ . }}</td>
             {{ end }}
         </tr>
     {{ end }}
     </tbody>
 
 </table>
-
 </body>
 </html>

@@ -70,8 +70,7 @@ func loadARace(filename string, races []*Race, db *AthleteDB, now time.Time) []*
 		//println("skipping ", filename, raceName)
 		return races
 	}
-
-	//println("Loading ", filename)
+	println("Loading ", filename)
 
 	popper()
 
@@ -108,7 +107,7 @@ func loadARace(filename string, races []*Race, db *AthleteDB, now time.Time) []*
 		}
 	}
 
-	//fmt.Printf("Loaded %d athletes\n",len(athletes))
+	fmt.Printf("Loaded %d athletes\n",len(athletes))
 
 	race := &Race{raceName, racePoints, raceDate, athletes}
 

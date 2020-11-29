@@ -265,6 +265,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	header := r.URL.Query()
+	println(header)
 	g := header["g"][0]
 	f, _ := strconv.Atoi(header["f"][0])
 	a, _ := strconv.Atoi(header["a"][0])
@@ -292,6 +293,7 @@ func main() {
 	db := makeAthleteDB()
 	races := scanFiles(db)
 	computeCategories(races)
-	http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe(":666", nil))
+	http.HandleFunc("/scoring", handler)
+	println("ready to serve")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
