@@ -99,7 +99,7 @@ func TestLoadRace(t *testing.T) {
 	raceDate, _ := time.Parse(layoutISO, "2020-04-01")
 	races = loadARace("data/2020-scale-the-strat.csv", races, db, raceDate)
 
-	computeCategories(races)
+	categoryMap := computeCategories(races)
 
 	race := races[0]
 
@@ -112,7 +112,7 @@ func TestLoadRace(t *testing.T) {
 	}
 
 	//check the USA only results
-	overallUSA := getCategory("M", US_ONLY, 0)
+	overallUSA := getCategory(categoryMap, "M", US_ONLY, 0)
 
 	winnahUSA := overallUSA.sortedAthletes[0]
 
@@ -144,7 +144,7 @@ func TestLoadRace(t *testing.T) {
 
 	//now check foreign
 
-	overall := getCategory("M", ALL, 0)
+	overall := getCategory(categoryMap, "M", ALL, 0)
 
 	winnahOverall := overall.sortedAthletes[0]
 
@@ -174,7 +174,7 @@ func TestLoadRace2(t *testing.T) {
 
 	races = loadARace("data/2020-trek-up-the-tower-single.csv", races, db, scoringDate)
 
-	computeCategories(races)
+	categoryMap := computeCategories(races)
 
 	race := races[0]
 
@@ -184,6 +184,13 @@ func TestLoadRace2(t *testing.T) {
 
 	//verify the de-duping code is right
 
-	db.
+	category := getCategory(categoryMap, "M", ALL, 0)
+
+	jason := category.results["JASON LARSON"]
+
+	if len(jason) != 1 {
+		t.Error("Jason has more than one result for trek up the tower")
+	}
+
 
 }

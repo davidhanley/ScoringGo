@@ -189,6 +189,8 @@ func loadARace(filename string, races []*Race, db *AthleteDB, now time.Time) []*
 
 	athletes := make([]*Athlete, 0)
 
+	athleteMap := make(map[int]bool)
+
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
@@ -202,7 +204,8 @@ func loadARace(filename string, races []*Race, db *AthleteDB, now time.Time) []*
 
 		athlete := athleteFromLine(record, db)
 
-		if athlete != nil {
+		if athlete != nil && athleteMap[athlete.id] == false {
+			athleteMap[athlete.id] = true
 			athlete.racesDone = athlete.racesDone + 1
 			athletes = append(athletes, athlete)
 		}
