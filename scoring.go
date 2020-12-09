@@ -8,8 +8,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
-	//"strconv"
-	"strings"
+
 	"sync"
 	"time"
 )
@@ -57,62 +56,6 @@ type CategoryResult struct {
 	includeForeign Foreignicity
 	results        map[string][]*AthleteRaceResult
 	sortedAthletes []AthleteAndPoints
-}
-
-type AthleteDB struct {
-	db           map[string][]*Athlete
-	athleteCount int
-}
-
-func makeAthleteDB() *AthleteDB {
-	return &AthleteDB{make(map[string][]*Athlete), 0}
-}
-
-// Abs returns the absolute value of x. Let's add gnerics, golang! 
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-func newAthleteID(athleteDB *AthleteDB) int {
-	athleteDB.athleteCount = athleteDB.athleteCount + 1
-	return athleteDB.athleteCount
-}
-
-//taking a name an an age, return an athlete ID
-func LookupAthlete(name string, age int, sex string, foreign bool, db *AthleteDB) *Athlete {
-	name = strings.ToUpper(name)
-	name = strings.TrimSpace(name)
-
-	athleteList := db.db[name]
-
-	newAth := func() *Athlete { return &Athlete{newAthleteID(db), name, age, sex, foreign, 0} }
-
-	if len(athleteList) == 0 {
-		na := newAth()
-		athleteList = append(athleteList, na)
-		db.db[name] = athleteList
-		return na
-	} else {
-		if age == 0 {
-			return athleteList[0]
-		}
-		for aid := range athleteList {
-			athlete := athleteList[aid]
-			if athlete.age == 0 {
-				athlete.age = age
-			}
-			if abs(athlete.age-age) < 2 {
-				return athlete
-			}
-		}
-		na := newAth()
-		athleteList = append(athleteList, na)
-		db.db[name] = athleteList
-		return na
-	}
 }
 
 func scoreGender(race *Race, gender string, result *CategoryResult) {
@@ -175,13 +118,13 @@ func computeCategory(waitGroup *sync.WaitGroup, cr *CategoryResult, races []*Rac
 	computeRankForCategory(cr)
 }
 
-var categoryMap = make(map[string]*CategoryResult)
+type CategoryMap map[string]*CategoryResult
 
 func categoryKey(gender string, foreignicity Foreignicity, agecat int) string {
 	return fmt.Sprintf("%s%d%d", gender, foreignicity, agecat)
 }
 
-func getCategory(gender string, foreignicity Foreignicity, agecat int) *CategoryResult {
+func getCategory(categoryMap CategoryMap, gender string, foreignicity Foreignicity, agecat int) *CategoryResult {
 	return categoryMap[categoryKey(gender, foreignicity, agecat)]
 }
 
@@ -211,8 +154,10 @@ func filterRacesForForeignicity(races []*Race, foreignicity Foreignicity) {
 	}
 }
 
-func computeCategories(races []*Race) {
+func computeCategories(races []*Race) CategoryMap {
 	var waitGroup sync.WaitGroup
+
+	categoryMap := make(map[string]*CategoryResult)
 
 	genders := []string{"F", "M"}
 	tf := []Foreignicity{ALL, THREE_RACE_FOREIGNERS, US_ONLY}
@@ -246,6 +191,7 @@ func computeCategories(races []*Race) {
 		}
 	}
 	waitGroup.Wait()
+	return categoryMap
 }
 
 type TableRow struct {
@@ -256,44 +202,45 @@ type TableRow struct {
 	Races  []string
 }
 
-var templ *template.Template
+//var templ *template.Template
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Fprintf(w, "invalid query")
-		}
-	}()
-	header := r.URL.Query()
-	println(header)
-	g := header["g"][0]
-	f, _ := strconv.Atoi(header["f"][0])
-	a, _ := strconv.Atoi(header["a"][0])
-	category := getCategory(g, Foreignicity(f), a)
-	if category != nil {
-		rows := make([]*TableRow, 0)
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		for i, athlete := range category.sortedAthletes {
-			sa := make([]string, 0)
-			results := category.results[athlete.athlete.name]
-			for _, rr := range results {
-				sa = append(sa, fmt.Sprintf("%s %f", rr.race.name, rr.points))
+func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		header := r.URL.Query()
+		g := header["g"][0]
+		f, _ := strconv.Atoi(header["f"][0])
+		a, _ := strconv.Atoi(header["a"][0])
+		rmax, _ := strconv.Atoi(header["r"][0])
+		category := getCategory(categoryMap, g ,Foreignicity(f), a)
+		if category != nil {
+			rows := make([]*TableRow, 0)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			for i, athlete := range category.sortedAthletes {
+				if i > rmax {
+					break
+				}
+				sa := make([]string, 0)
+				results := category.results[athlete.athlete.name]
+				for _, rr := range results {
+					sa = append(sa, fmt.Sprintf("%s %f", rr.race.name, rr.points))
+				}
+				r := &TableRow{i + 1, athlete.athlete.name, athlete.athlete.age, athlete.points, sa}
+				rows = append(rows, r)
 			}
-			r := &TableRow{i, athlete.athlete.name, athlete.athlete.age, athlete.points, sa}
-			rows = append(rows, r)
+			templ.ExecuteTemplate(w, "raceTable.html", rows)
+		} else {
+			fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
 		}
-		templ.ExecuteTemplate(w, "raceTable.html", rows)
-	} else {
-		fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
 	}
 }
 
 func main() {
-	templ, _ = templ.ParseGlob("raceTable.html")
+	var templ *template.Template
+	temp2, _ := templ.ParseGlob("raceTable.html")
 	db := makeAthleteDB()
 	races := scanFiles(db)
-	computeCategories(races)
-	http.HandleFunc("/scoring", handler)
+	categoryMap := computeCategories(races)
+	http.HandleFunc("/scoring", makeHandler(categoryMap, temp2))
 	println("ready to serve")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

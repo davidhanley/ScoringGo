@@ -50,6 +50,18 @@ func TestGetId(t *testing.T) {
 	}
 }
 
+func TestNameDedupe(t *testing.T) {
+	db := makeAthleteDB()
+
+	if LookupAthlete("JOSH DUNCAN", 42, "M", false, db).id != 1 {
+		t.Error("first ID not one")
+	}
+
+	if LookupAthlete("JOSHUA DUNCAN", 42, "M", false, db).id != 1 {
+		t.Error("should be same josh")
+	}
+}
+
 func TestFilterForeign(t *testing.T) {
 
 	a1 := &Athlete{0, "dave", 48, "M", false, 5}
@@ -104,10 +116,10 @@ func TestLoadRace(t *testing.T) {
 
 	winnahUSA := overallUSA.sortedAthletes[0]
 
-	for a := 0; a < 50; a++ {
+	/*for a := 0; a < 50; a++ {
 		ath := overallUSA.sortedAthletes[a].athlete
 		fmt.Printf("%d %s %d\n", a,ath.name,ath.age)
-	}
+	}*/
 
 	if winnahUSA.points != 350.0 {
 		t.Error("wrong winner points")
@@ -145,20 +157,33 @@ func TestLoadRace(t *testing.T) {
 		t.Error("wrong winner points")
 	}
 
-	/* dave := race.athletes[27]
+	daveAAP := overall.sortedAthletes[27]
 
-	if dave.foreign == true {
-		t.Error("dave is not foreign")
+	if daveAAP.points != 54.6875 {
+		t.Error(fmt.Sprintf("dave points wrong: %f", daveAAP.points))
 	}
 
-	daveFirstResult := dave.raceResults[0]
+}
 
-	if daveFirstResult.rank != 22 {
-		t.Error(fmt.Sprintf("dave rank (%d)is wrong...", daveFirstResult.rank))
+func TestLoadRace2(t *testing.T) {
+	db := makeAthleteDB()
+
+	races := make([]*Race, 0)
+
+	scoringDate, _ := time.Parse(layoutISO, "2020-04-01")
+
+	races = loadARace("data/2020-trek-up-the-tower-single.csv", races, db, scoringDate)
+
+	computeCategories(races)
+
+	race := races[0]
+
+	if race.name != "2020 trek up the tower" {
+		t.Error("trek up the tower name is wrong: " + race.name)
 	}
 
-	if daveFirstResult.points != 67.307693 {
-		t.Error(fmt.Printf("dave first points wrong: %f", daveFirstResult.points))
-	}
-	*/
+	//verify the de-duping code is right
+
+	db.
+
 }
