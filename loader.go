@@ -38,7 +38,7 @@ func newAthleteID(athleteDB *AthleteDB) int {
 }
 
 //taking a name an an age, return an athlete ID
-func LookupAthlete(name string, age int, sex string, foreign bool, db *AthleteDB) *Athlete {
+func lookupAthlete(name string, age int, sex string, foreign bool, db *AthleteDB) *Athlete {
 	name = translateName(strings.ToUpper(name))
 	name = strings.TrimSpace(name)
 
@@ -114,9 +114,19 @@ func translateName(stringIn string) string {
 	return stringIn
 }
 
+func SAF(sex string) (string,bool) {
+	foreign := false
+	if len(sex) > 0 && sex[0] == '*' {
+		foreign = true
+		sex = sex[1:]
+	}
+	return sex,foreign
+}
+
 //turn a CSV line into an athlete
 //intended to return null if there is no gender
 func athleteFromLine(line []string, db *AthleteDB) *Athlete {
+	//fmt.Print(line)
 	var athlete *Athlete
 	if len(line) >= 4 {
 		name := line[1]
@@ -124,20 +134,17 @@ func athleteFromLine(line []string, db *AthleteDB) *Athlete {
 		if err != nil {
 			age = 0
 		}
-		sex := line[3]
-		foreign := false
-		if len(sex) > 0 && sex[0] == '*' {
-			foreign = true
-			sex = sex[1:]
-		}
+		_sex := line[3]
+		sex,foreign := SAF(_sex)
 
 		if len(sex) > 0 {
 			sex = strings.ToUpper(sex)[:1]
 			if sex == "F" || sex == "M" {
-				athlete = LookupAthlete(name, age, sex, foreign, db)
+				athlete = lookupAthlete(name, age, sex, foreign, db)
 			}
 		}
 	}
+	fmt.Printf("%s %s %v\n",athlete.name,athlete.sex,athlete.foreign)
 	return athlete
 }
 
@@ -196,6 +203,8 @@ func loadARace(filename string, races []*Race, db *AthleteDB, now time.Time) []*
 		if err == io.EOF {
 			break
 		}
+
+		fmt.Printf("%s\n",line)
 
 		record := strings.Split(line, ",")
 		for i := 0; i < len(record); i++ {
