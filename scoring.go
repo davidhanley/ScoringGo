@@ -21,7 +21,7 @@ func scoreGender(race *Race, gender string, result *CategoryResult) {
 		athlete := *athletes[i]
 		if athlete.sex == gender &&
 			(athlete.age >= result.ageLow && athlete.age <= result.ageHigh) {
-			points := int64(basePoints * places / denom)
+			points := int64(basePoints / denom)
 			athleteRank := AthleteAndPoints{&athlete, 0.0}
 			rr := AthleteRaceResult{athleteRank, race, points, denom - 4}
 			athletesRaces := result.results
