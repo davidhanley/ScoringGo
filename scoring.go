@@ -43,7 +43,7 @@ func computeRankForCategory(category *CategoryResult) {
 		sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
 		points := float32(0.0)
 		for i, r := range results {
-			if i >= 5 {
+			if i >= 3 {
 				break
 			}
 			points = points + r.points
