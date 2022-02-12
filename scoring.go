@@ -176,7 +176,7 @@ func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.
 				sa := make([]string, 0)
 				results := category.results[athlete.athlete.name]
 				for _, rr := range results {
-					sa = append(sa, fmt.Sprintf("%s %f", rr.race.name, float64(rr.points)/places))
+					sa = append(sa, fmt.Sprintf("%s %.3f", rr.race.name, float64(rr.points)/places))
 				}
 				r := &TableRow{i + 1, athlete.athlete.name, athlete.athlete.age, float64(athlete.points)/places, sa}
 				rows = append(rows, r)
