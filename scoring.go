@@ -10,7 +10,6 @@ import (
 	"math/big"
 )
 
-
 func scoreGender(race *Race, gender string, result *CategoryResult) {
 	startFraction := 5
 	basePoints := int64(race.points * startFraction)
@@ -21,8 +20,8 @@ func scoreGender(race *Race, gender string, result *CategoryResult) {
 		athlete := *athletes[i]
 		if athlete.sex == gender &&
 			(athlete.age >= result.ageLow && athlete.age <= result.ageHigh) {
-			points := big.NewRat(basePoints , denom)
-			athleteRank := AthleteAndPoints{&athlete, *big.NewRat(1,1)}
+			points := big.NewRat(basePoints, denom)
+			athleteRank := AthleteAndPoints{&athlete, *big.NewRat(1, 1)}
 			rr := AthleteRaceResult{athleteRank, race, *points, int(denom - 4)}
 			athletesRaces := result.results
 			if athletesRaces == nil {
@@ -43,16 +42,17 @@ func computeRankForCategory(category *CategoryResult) {
 	athletesAndPoints := make([]AthleteAndPoints, 0)
 	//first, compute the top five for each athlete
 	for _, results := range category.results {
-		sort.Slice(results, func(i, j int) bool { return results[i].points.Cmp(&results[j].points)<0 })
+		sort.Slice(results, func(i, j int) bool { return results[i].points.Cmp(&results[j].points) > 0 })
 		var points *big.Rat = nil
 		for i, r := range results {
 			if i >= 3 {
 				break
 			}
 			if points == nil {
-				points = &r.points
+				points = new (big.Rat)
+				points.Set(&r.points)
 			} else {
-				points = points.Add(points,&r.points)
+				points = points.Add(points, &r.points)
 			}
 
 		}
@@ -62,13 +62,13 @@ func computeRankForCategory(category *CategoryResult) {
 	}
 	//next, sort the category by top five results per athlete
 	sort.Slice(athletesAndPoints, func(i, j int) bool {
-		return athletesAndPoints[i].points.Cmp( &athletesAndPoints[j].points) > 0
+		return athletesAndPoints[i].points.Cmp(&athletesAndPoints[j].points) > 0
 	})
 
 	category.sortedAthletes = athletesAndPoints
 }
 
-func computeCategory(/*waitGroup *sync.WaitGroup, */cr *CategoryResult, races []*Race) {
+func computeCategory( /*waitGroup *sync.WaitGroup, */ cr *CategoryResult, races []*Race) {
 	//defer waitGroup.Done()
 
 	for _, race := range races {
@@ -170,7 +170,7 @@ func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.
 		f, _ := strconv.Atoi(header["f"][0])
 		a, _ := strconv.Atoi(header["a"][0])
 		rmax, _ := strconv.Atoi(header["r"][0])
-		category := getCategory(categoryMap, g ,Foreignicity(f), a)
+		category := getCategory(categoryMap, g, Foreignicity(f), a)
 		if category != nil {
 			rows := make([]*TableRow, 0)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -181,10 +181,10 @@ func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.
 				sa := make([]string, 0)
 				results := category.results[athlete.athlete.name]
 				for _, rr := range results {
-					p,_ := rr.points.Float64()
+					p, _ := rr.points.Float64()
 					sa = append(sa, fmt.Sprintf("%s %.3f", rr.race.name, p))
 				}
-				p,_ := athlete.points.Float64()
+				p, _ := athlete.points.Float64()
 				r := &TableRow{i + 1, athlete.athlete.name, athlete.athlete.age, p, sa}
 				rows = append(rows, r)
 			}
