@@ -4,10 +4,12 @@ import (
   "time"
 )
 
+const places = 1000
+
 type AthleteRaceResult struct {
 	ath    AthleteAndPoints
 	race   *Race
-	points float64
+	points int64
 	rank   int
 }
 
@@ -22,7 +24,7 @@ type Athlete struct {
 
 type AthleteAndPoints struct {
 	athlete *Athlete
-	points  float64
+	points  int64
 }
 
 type Race struct {

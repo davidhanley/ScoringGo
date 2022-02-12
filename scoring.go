@@ -7,23 +7,24 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-	"math"
+	//"math"
 )
 
-func round(f float64) float64 {
+/*func round(f float64) float64 {
 	return math.Round(f*1000)/1000
-}
+}*/
 
 func scoreGender(race *Race, gender string, result *CategoryResult) {
 	startFraction := 5
-	basePoints := float64(race.points * startFraction)
+	basePoints := race.points * startFraction * places
+
 	denom := startFraction
 	athletes := race.athletes
 	for i := 0; i < len(athletes); i++ {
 		athlete := *athletes[i]
 		if athlete.sex == gender &&
 			(athlete.age >= result.ageLow && athlete.age <= result.ageHigh) {
-			points := round(basePoints / float64(denom))
+			points := int64(basePoints * places / denom)
 			athleteRank := AthleteAndPoints{&athlete, 0.0}
 			rr := AthleteRaceResult{athleteRank, race, points, denom - 4}
 			athletesRaces := result.results
@@ -46,7 +47,7 @@ func computeRankForCategory(category *CategoryResult) {
 	//first, compute the top five for each athlete
 	for _, results := range category.results {
 		sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
-		var points = float64(0.0)
+		var points = int64(0)
 		for i, r := range results {
 			if i >= 3 {
 				break
@@ -178,9 +179,9 @@ func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.
 				sa := make([]string, 0)
 				results := category.results[athlete.athlete.name]
 				for _, rr := range results {
-					sa = append(sa, fmt.Sprintf("%s %f", rr.race.name, rr.points))
+					sa = append(sa, fmt.Sprintf("%s %f", rr.race.name, float64(rr.points)))
 				}
-				r := &TableRow{i + 1, athlete.athlete.name, athlete.athlete.age, athlete.points, sa}
+				r := &TableRow{i + 1, athlete.athlete.name, athlete.athlete.age, float64(athlete.points)/places, sa}
 				rows = append(rows, r)
 			}
 			templ.ExecuteTemplate(w, "raceTable.html", rows)
