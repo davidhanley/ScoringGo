@@ -7,7 +7,7 @@ import (
 type AthleteRaceResult struct {
 	ath    AthleteAndPoints
 	race   *Race
-	points float32
+	points float64
 	rank   int
 }
 
@@ -22,7 +22,7 @@ type Athlete struct {
 
 type AthleteAndPoints struct {
 	athlete *Athlete
-	points  float32
+	points  float64
 }
 
 type Race struct {

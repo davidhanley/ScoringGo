@@ -10,6 +10,10 @@ import (
 	"math"
 )
 
+func round(f float64) float64 {
+	return math.Round(f*1000)/1000
+}
+
 func scoreGender(race *Race, gender string, result *CategoryResult) {
 	startFraction := 5
 	basePoints := float64(race.points * startFraction)
@@ -19,9 +23,9 @@ func scoreGender(race *Race, gender string, result *CategoryResult) {
 		athlete := *athletes[i]
 		if athlete.sex == gender &&
 			(athlete.age >= result.ageLow && athlete.age <= result.ageHigh) {
-			points := math.Round(basePoints / float64(denom)*1000)/1000.0
+			points := round(basePoints / float64(denom))
 			athleteRank := AthleteAndPoints{&athlete, 0.0}
-			rr := AthleteRaceResult{athleteRank, race, float32(points), denom - 4}
+			rr := AthleteRaceResult{athleteRank, race, points, denom - 4}
 			athletesRaces := result.results
 			if athletesRaces == nil {
 				panic("race nil")
@@ -42,7 +46,7 @@ func computeRankForCategory(category *CategoryResult) {
 	//first, compute the top five for each athlete
 	for _, results := range category.results {
 		sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
-		points := float32(0.0)
+		var points = float64(0.0)
 		for i, r := range results {
 			if i >= 3 {
 				break
@@ -150,7 +154,7 @@ type TableRow struct {
 	Rank   int
 	Name   string
 	Age    int
-	Points float32
+	Points float64
 	Races  []string
 }
 
