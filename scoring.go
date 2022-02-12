@@ -62,7 +62,11 @@ func computeRankForCategory(category *CategoryResult) {
 	}
 	//next, sort the category by top five results per athlete
 	sort.Slice(athletesAndPoints, func(i, j int) bool {
-		return athletesAndPoints[i].points.Cmp(&athletesAndPoints[j].points) > 0
+		res := athletesAndPoints[i].points.Cmp(&athletesAndPoints[j].points)
+		if res == 0 {
+			res =  athletesAndPoints[j].athlete.racesDone - athletesAndPoints[i].athlete.racesDone
+		}
+		return res > 0
 	})
 
 	category.sortedAthletes = athletesAndPoints
