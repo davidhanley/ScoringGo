@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"math"
 )
 
 func scoreGender(race *Race, gender string, result *CategoryResult) {
@@ -18,7 +19,7 @@ func scoreGender(race *Race, gender string, result *CategoryResult) {
 		athlete := *athletes[i]
 		if athlete.sex == gender &&
 			(athlete.age >= result.ageLow && athlete.age <= result.ageHigh) {
-			points := basePoints / float64(denom)
+			points := math.Round(basePoints / float64(denom)*10000)/10000.0
 			athleteRank := AthleteAndPoints{&athlete, 0.0}
 			rr := AthleteRaceResult{athleteRank, race, float32(points), denom - 4}
 			athletesRaces := result.results
