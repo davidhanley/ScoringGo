@@ -7,21 +7,22 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-	"math"
+	"math/big"
 )
 
 func scoreGender(race *Race, gender string, result *CategoryResult) {
 	startFraction := 5
-	basePoints := float64(race.points * startFraction)
-	denom := startFraction
+	basePoints := int64(race.points * startFraction)
+
+	denom := int64(startFraction)
 	athletes := race.athletes
 	for i := 0; i < len(athletes); i++ {
 		athlete := *athletes[i]
 		if athlete.sex == gender &&
 			(athlete.age >= result.ageLow && athlete.age <= result.ageHigh) {
-			points := math.Round(basePoints / float64(denom)*1000)/1000.0
-			athleteRank := AthleteAndPoints{&athlete, 0.0}
-			rr := AthleteRaceResult{athleteRank, race, float32(points), denom - 4}
+			points := big.NewRat(basePoints, denom)
+			athleteRank := AthleteAndPoints{&athlete, *big.NewRat(1, 1)}
+			rr := AthleteRaceResult{athleteRank, race, *points, int(denom - 4)}
 			athletesRaces := result.results
 			if athletesRaces == nil {
 				panic("race nil")
@@ -41,27 +42,33 @@ func computeRankForCategory(category *CategoryResult) {
 	athletesAndPoints := make([]AthleteAndPoints, 0)
 	//first, compute the top five for each athlete
 	for _, results := range category.results {
-		sort.Slice(results, func(i, j int) bool { return results[i].points > results[j].points })
-		points := float32(0.0)
+		sort.Slice(results, func(i, j int) bool { return results[i].points.Cmp(&results[j].points) > 0 })
+		var points *big.Rat = nil
 		for i, r := range results {
 			if i >= 3 {
 				break
 			}
-			points = points + r.points
+			if points == nil {
+				points = new (big.Rat)
+				points.Set(&r.points)
+			} else {
+				points = points.Add(points, &r.points)
+			}
+
 		}
 		athlete := results[0].ath
-		athlete.points = points
+		athlete.points = *points
 		athletesAndPoints = append(athletesAndPoints, athlete)
 	}
 	//next, sort the category by top five results per athlete
 	sort.Slice(athletesAndPoints, func(i, j int) bool {
-		return athletesAndPoints[i].points > athletesAndPoints[j].points
+		return athletesAndPoints[i].points.Cmp(&athletesAndPoints[j].points) > 0
 	})
 
 	category.sortedAthletes = athletesAndPoints
 }
 
-func computeCategory(/*waitGroup *sync.WaitGroup, */cr *CategoryResult, races []*Race) {
+func computeCategory( /*waitGroup *sync.WaitGroup, */ cr *CategoryResult, races []*Race) {
 	//defer waitGroup.Done()
 
 	for _, race := range races {
@@ -150,7 +157,7 @@ type TableRow struct {
 	Rank   int
 	Name   string
 	Age    int
-	Points float32
+	Points string
 	Races  []string
 }
 
@@ -163,7 +170,7 @@ func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.
 		f, _ := strconv.Atoi(header["f"][0])
 		a, _ := strconv.Atoi(header["a"][0])
 		rmax, _ := strconv.Atoi(header["r"][0])
-		category := getCategory(categoryMap, g ,Foreignicity(f), a)
+		category := getCategory(categoryMap, g, Foreignicity(f), a)
 		if category != nil {
 			rows := make([]*TableRow, 0)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -174,9 +181,11 @@ func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.
 				sa := make([]string, 0)
 				results := category.results[athlete.athlete.name]
 				for _, rr := range results {
-					sa = append(sa, fmt.Sprintf("%s %f", rr.race.name, rr.points))
+					p, _ := rr.points.Float64()
+					sa = append(sa, fmt.Sprintf("%s %.3f", rr.race.name, p))
 				}
-				r := &TableRow{i + 1, athlete.athlete.name, athlete.athlete.age, athlete.points, sa}
+				p  := athlete.points.FloatString(3)
+				r := &TableRow{i + 1, athlete.athlete.name, athlete.athlete.age, p, sa}
 				rows = append(rows, r)
 			}
 			templ.ExecuteTemplate(w, "raceTable.html", rows)

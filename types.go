@@ -2,12 +2,13 @@ package main
 
 import (
   "time"
+  "math/big"
 )
 
 type AthleteRaceResult struct {
 	ath    AthleteAndPoints
 	race   *Race
-	points float32
+	points big.Rat
 	rank   int
 }
 
@@ -22,7 +23,7 @@ type Athlete struct {
 
 type AthleteAndPoints struct {
 	athlete *Athlete
-	points  float32
+	points  big.Rat
 }
 
 type Race struct {
