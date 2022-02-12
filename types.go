@@ -2,14 +2,13 @@ package main
 
 import (
   "time"
+  "math/big"
 )
-
-const places = 1000
 
 type AthleteRaceResult struct {
 	ath    AthleteAndPoints
 	race   *Race
-	points int64
+	points big.Rat
 	rank   int
 }
 
@@ -24,7 +23,7 @@ type Athlete struct {
 
 type AthleteAndPoints struct {
 	athlete *Athlete
-	points  int64
+	points  big.Rat
 }
 
 type Race struct {
