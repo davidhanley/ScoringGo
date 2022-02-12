@@ -157,7 +157,7 @@ type TableRow struct {
 	Rank   int
 	Name   string
 	Age    int
-	Points float64
+	Points string
 	Races  []string
 }
 
@@ -184,7 +184,7 @@ func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.
 					p, _ := rr.points.Float64()
 					sa = append(sa, fmt.Sprintf("%s %.3f", rr.race.name, p))
 				}
-				p, _ := athlete.points.Float64()
+				p  := athlete.points.FloatString(3)
 				r := &TableRow{i + 1, athlete.athlete.name, athlete.athlete.age, p, sa}
 				rows = append(rows, r)
 			}
