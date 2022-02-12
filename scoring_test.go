@@ -18,7 +18,6 @@ func TestSAF(t *testing.T) {
 		t.Error("second wrong")
 	}
 
-
 }
 
 func TestGetId(t *testing.T) {
@@ -64,11 +63,11 @@ func TestGetId(t *testing.T) {
 		t.Error("erin should be updated")
 	}
 
-	l := strings.Split(",WAI CHING SOH,27,*M,\"KUALA LUMPUR MALAYSIA,\",10:46",",")
+	l := strings.Split(",WAI CHING SOH,27,*M,\"KUALA LUMPUR MALAYSIA,\",10:46", ",")
 
-    a := athleteFromLine(l,db)
+	a := athleteFromLine(l, db)
 
-    if ( a.foreign != true || a.sex!= "M") {
+	if a.foreign != true || a.sex != "M" {
 		t.Error("waiching not parsed")
 	}
 }
@@ -180,6 +179,37 @@ func TestLoadRace(t *testing.T) {
 
 } */
 
+func TestFoeign(t *testing.T) {
+	db := makeAthleteDB()
+
+	races := make([]*Race, 0)
+
+	scoringDate, _ := time.Parse(layoutISO, "2022-02-08")
+
+	races = loadARace("data/2021-esbru.csv", races, db, scoringDate)
+
+	resultMap := make(map[string][]*AthleteRaceResult, 0)
+	sorted := make([]AthleteAndPoints, 0)
+
+	var categoryResult = &CategoryResult{
+		gender:         "M",
+		ageLow:         0,
+		ageHigh:        99,
+		includeForeign: ALL,
+		results:        resultMap,
+		sortedAthletes: sorted,
+	}
+	//because this has no side-effect other than modifying categoryResult,
+	//we can run it as its own goroutine..  We just need to wait until we serve results..
+
+	computeCategory(categoryResult, races)
+
+	for a := 0 ; a < 20 ; a ++ {
+		r := categoryResult.sortedAthletes[a]
+		fmt.Printf("%s\n",r.athlete.name)
+	}
+}
+
 func TestLoadRace2(t *testing.T) {
 	db := makeAthleteDB()
 
@@ -203,7 +233,7 @@ func TestLoadRace2(t *testing.T) {
 
 	for a := 0 ; a < 20 ; a ++ {
 		r := category.sortedAthletes[a]
-		fmt.Print(r.athlete.name)
+		fmt.Printf("%s\n",r.athlete.name)
 	}
 	waiching := category.results["WAI CHING SOH"]
 

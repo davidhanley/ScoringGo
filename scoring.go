@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"html/template"
 	"log"
 	"net/http"
 	"sort"
-	"sync"
+	"strconv"
 )
 
 func scoreGender(race *Race, gender string, result *CategoryResult) {
@@ -61,8 +60,8 @@ func computeRankForCategory(category *CategoryResult) {
 	category.sortedAthletes = athletesAndPoints
 }
 
-func computeCategory(waitGroup *sync.WaitGroup, cr *CategoryResult, races []*Race) {
-	defer waitGroup.Done()
+func computeCategory(/*waitGroup *sync.WaitGroup, */cr *CategoryResult, races []*Race) {
+	//defer waitGroup.Done()
 
 	for _, race := range races {
 		scoreGender(race, cr.gender, cr)
@@ -97,9 +96,9 @@ func filterRaceForForeignicity(race *Race, foreignicity Foreignicity) {
 }
 
 func filterRacesForForeignicity(races []*Race, foreignicity Foreignicity) {
-	if foreignicity == ALL {
+	/*if foreignicity == ALL {
 		return
-	}
+	}*/
 
 	for _, race := range races {
 		filterRaceForForeignicity(race, foreignicity)
@@ -107,7 +106,7 @@ func filterRacesForForeignicity(races []*Race, foreignicity Foreignicity) {
 }
 
 func computeCategories(races []*Race) CategoryMap {
-	var waitGroup sync.WaitGroup
+	//var waitGroup sync.WaitGroup
 
 	categoryMap := make(map[string]*CategoryResult)
 
@@ -134,15 +133,15 @@ func computeCategories(races []*Race) CategoryMap {
 				}
 				//because this has no side-effect other than modifying categoryResult,
 				//we can run it as its own goroutine..  We just need to wait until we serve results..
-				go computeCategory(&waitGroup, categoryResult, races)
-				waitGroup.Add(1)
+				computeCategory( /*waitGroup, */ categoryResult, races)
+				//waitGroup.Add(1)
 
 				key := categoryKey(gender, foreign, ageIndex)
 				categoryMap[key] = categoryResult
 			}
 		}
 	}
-	waitGroup.Wait()
+	//waitGroup.Wait()
 	return categoryMap
 }
 
