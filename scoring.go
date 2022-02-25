@@ -63,7 +63,7 @@ func computeRankForCategory(category *CategoryResult) {
 	//next, sort the category by top five results per athlete
 	sort.Slice(athletesAndPoints, func(i, j int) bool {
 		res := athletesAndPoints[i].points.Cmp(&athletesAndPoints[j].points)
-		//break ties by who did fewer races 
+		//break ties by who did fewer races
 		if res == 0 {
 			res =  athletesAndPoints[j].athlete.racesDone - athletesAndPoints[i].athlete.racesDone
 		}
@@ -167,7 +167,6 @@ type TableRow struct {
 	Races  []string
 }
 
-//var templ *template.Template
 
 func makeHandler(categoryMap CategoryMap, templ *template.Template) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
