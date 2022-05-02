@@ -144,7 +144,7 @@ func athleteFromLine(line []string, db *AthleteDB) *Athlete {
 			}
 		}
 	}
-	fmt.Printf("%s %s %v\n",athlete.name,athlete.sex,athlete.foreign)
+	//fmt.Printf("%s %s %v\n",athlete.name,athlete.sex,athlete.foreign)
 	return athlete
 }
 
