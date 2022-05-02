@@ -45,7 +45,7 @@ func computeRankForCategory(category *CategoryResult) {
 		sort.Slice(results, func(i, j int) bool { return results[i].points.Cmp(&results[j].points) > 0 })
 		var points *big.Rat = nil
 		for i, r := range results {
-			if i >= 3 {
+			if i >= 5 {
 				break
 			}
 			if points == nil {
