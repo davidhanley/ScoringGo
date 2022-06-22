@@ -8,16 +8,14 @@ lines = [ l.strip() for l in open(inf,"r") ]
 index = 0 
 while index < len(lines):
   line = lines[index]
-  if line == 'MIN/MI' : 
-   try:
-    name = lines[index-6]
-    blob = lines[index-5]
-    blobby = blob.split()
-    sex = blobby[0]
-    age = blobby[1].split("Bib")[0]
-    bib = re.sub("[^0-9]", "", blobby[2])
-    time = lines[index+1]
-    print ",".join([bib,name,age,sex,time])
-   except:
-    pass
+  line = line.split()
+  if len(line)>=3 and "Bib" in line[1]:
+    name = lines[index-1]
+    gender = line[0]
+    age = line[1].split("Bib")[0]
+  
+    parts = ["",name,age,gender]
+    print ",".join(parts)
   index = index + 1 
+
+   
