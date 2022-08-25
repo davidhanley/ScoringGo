@@ -37,7 +37,7 @@ func newAthleteID(athleteDB *AthleteDB) int {
 	return athleteDB.athleteCount
 }
 
-//taking a name an an age, return an athlete ID
+//taking a name and an age, return an athlete ID
 func lookupAthlete(name string, age int, sex string, foreign bool, db *AthleteDB) *Athlete {
 	name = translateName(strings.ToUpper(name))
 	name = strings.TrimSpace(name)
